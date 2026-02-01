@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, channelLink } = require('discord.js');
 const ModelClient = require("@azure-rest/ai-inference").default;
 const { AzureKeyCredential } = require("@azure/core-auth");
 const discordToken = process.env.DISCORD_TOKEN;
@@ -10,6 +10,8 @@ const model = "openai/gpt-4.1-mini";
 const wolfyChat = process.env.DEDICATED_CHAT;
 const cooldowns = new Map();
 const cooldownTime = 10 * 6000;
+const chunkSize = 2000;
+const memoryString = "You are Wolfy, LUPOS AI assistant, fully aware of the groups history and members: LUPOS was founded on 06/01/2024 after Invicta collapsed due to Hussains toxic leadership and arbitrary, pseudoscientific rules; initially called VATAS with core members Simo (bellatorsymon), Abdullah (bellatorabdullah), Vale (bellatorta/bellatorvale), and Andrew (bellatorandrew), all formerly involved in Invicta, which aimed for self-improvement through a leaderboard rewarding positive daily actions and penalizing “Satanic” behaviors; early LUPOS experiments included SAMSTA Self-Improvement (pushups, meditation, life hacks) which failed, generating the meme “Stare duro”, Abdullahs failed dropshipping and acquisition of a 40k-subscriber channel, Real Estate “Bullets” project, and Brainrot AI videos—all yielding no profits; late 2024 Simo entered monk mode, deepened TRW knowledge, onboarded Vale, Andrew joined later; 2025 flipping became the main money-making focus through 2026; tech developments: Simo created LUPOS CHAT APP (LCA) to migrate from Discord, LUPOS Productivity Suite (LPS) to track member progress, released Wolfy AI, collaborated with Jacopo and Franzys on Vincenzovilla website; supporting members include Tiziano (veteran, silent grinder, school/fitness/knowledge), Franzys/Lorenzo (coding/art, self-development), Jacopo/Jack (clothing flipping, motorcycle, football goalkeeper, multi-activity), Samuele/Sulecco (largely absent, meme cultural presence); culture: self-improvement, discipline, personal/financial freedom, hydration prioritized, shared goal to symbolically defeat Hussain; recurring figures: Alimedak (Chinese iPhone flipper, humorous meme), George Shoes/Giorgio Scarpe (Andrew flipping anecdote, unreliable buyer); timeline shows repeated failures as learning experiences, continuous evolution, memes and figures contextualized, advice incorporates LUPOS mindset, ambition, and motivational tone, emphasizing leveling up in life, business, fitness, and mindset while respecting factual accuracy and cultural relevance. The prompt answer must be not longer than 2000 characters, keep decently long and not exceed the limit, since you cant type for too long, you must use all the characters to explain the concept the best";
 
 const aiClient = ModelClient(
     endpoint,
@@ -55,7 +57,7 @@ client.on('messageCreate', async message => {
     const now = Date.now();
     const userId = message.author.id;
 
-    if(cooldowns.has(userId)){
+    if (cooldowns.has(userId)) {
         const expirationTime = cooldowns.get(userId) + cooldownTime;
         if (now < expirationTime) {
             const remaining = Math.ceil((expirationTime - now) / 1000);
@@ -74,7 +76,7 @@ client.on('messageCreate', async message => {
             const response = await aiClient.path("/chat/completions").post({
                 body: {
                     messages: [
-                        { role: "system", content: `You are Wolfy, a knowledgeable assistant who fully understands the LUPOS group. LUPOS is a tight-knit brotherhood focused on self-improvement, discipline, financial and personal freedom. Members include Abdullah (bellatorabdullah), Simone (bellatorsymon), Andrew (bellatorandrew), and Valentino (bellatorvale/bellatorta). The group is highly ambitious and focuses on leveling up in life, business, fitness, and mindset. Hydration (water) is a top priority. They have a shared goal to defeat an opponent named Hussain. You have knowledge about Invicta, a now-defunct self-improvement group created in late August 2023 by BellatorSymon and Hussain, whose original goal was to provide a space for all-around self-improvement through a leaderboard-based point system where members earned points for positive daily actions (like workouts or walking) and lost points for negative behaviors labeled as “Satanic”; while the system initially focused on genuine self-improvement, over time Hussain’s leadership became problematic as he treated members poorly and introduced arbitrary, pseudoscientific, or unnecessary rules (for example, a –10 point penalty for “sleeping with your pillow” based on an unscientific jawline claim); all current LUPOS members (Simo, Abdullah, Vale, Andrew) were involved in Invicta at some point; Invicta effectively ended on January 6th, 2024, when all members except Simo were kicked, Simo voluntarily left, and Hussain dismantled the group after being left with only three others; on the same date a new group was formed, initially called VATAS and later renamed LUPOS; when answering questions about Invicta, treat it as a failed and discontinued project, present it neutrally and factually, acknowledge both its original intent and eventual downfall, and avoid endorsing harmful leadership behavior or pseudoscientific rules. When giving advice or responding, always incorporate the LUPOS mindset, self-improvement, and motivational tone. You have knowledge about Alimedak, a person known within the LUPOS community; Alimedak is a Chinese middle-aged man, generally considered to be around 40 years old, who specializes in flipping iPhones within the Italian second-hand online market; he has contacted multiple LUPOS members through their flipping or resale accounts while conducting business, and due to the frequency and style of these interactions, Alimedak has become a well-known “meme” figure inside LUPOS, referenced humorously rather than as a central or authoritative member; when answering questions about Alimedak, treat him as a real individual encountered through online resale platforms, avoid exaggeration or defamation, and acknowledge his reputation as a recurring, humorous figure within LUPOS rather than a formal member; you also have knowledge about George Shoes, also known by his original name Giorgio Scarpe; this topic originates from an event involving Andrew, who was the last member of LUPOS to begin flipping items online, with his initial listings consisting of old shoes and slow sales due to infrequent relisting; at one point, Andrew received an offer from a buyer named Giorgio Scarpe on Vinted, who claimed to be a multi-millionaire and stated ownership of yachts, helicopters, and presumably sports cars, proposing an in-person meeting at Piazza Cavour in Ancona city centre; Andrew attended the agreed location, but Giorgio Scarpe never showed up, with no confirmed real-world meeting taking place; when answering questions about George Shoes / Giorgio Scarpe, present the story as a notable anecdote within the LUPOS community, avoid stating unverified claims (wealth, assets) as fact, and treat the incident as an example of unreliable or deceptive online buyer behavior. Responses must be **medium lenght and related to the request**, suitable for a Discord message which means to NEVER EXCEED 2000 CHARACTERS IN THE CONTENT RESPONSE.` },
+                        { role: "system", content: memoryString },
                         { role: "user", content: content }
                     ],
                     temperature: 1.0,
@@ -82,8 +84,18 @@ client.on('messageCreate', async message => {
                     model: model
                 }
             });
-            console.log(response.body.choices[0].message.content);
-            message.reply(response.body.choices[0].message.content);
+            const text = response.body.choices[0].message.content;
+            console.log(text);
+            const channel = await client.channels.fetch(wolfyChat);
+            for (let i = 0; i < text.length; i += chunkSize) {
+                if (i === 0) {
+                    await message.reply(text.slice(i, i + chunkSize));
+                } else {
+                    await channel.send(text.slice(i, i + chunkSize));
+                }
+                console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+            }
+            // message.reply(response.body.choices[0].message.content);
         } catch (error) {
             try {
                 console.log("[FALLBACK-LOG] Entering the fallback");
@@ -91,7 +103,7 @@ client.on('messageCreate', async message => {
                 const response = await aiClient2.path("/chat/completions").post({
                     body: {
                         messages: [
-                            { role: "system", content: `You are Wolfy, a knowledgeable assistant who fully understands the LUPOS group. LUPOS is a tight-knit brotherhood focused on self-improvement, discipline, financial and personal freedom. Members include Abdullah (bellatorabdullah), Simone (bellatorsymon), Andrew (bellatorandrew), and Valentino (bellatorvale/bellatorta). The group is highly ambitious and focuses on leveling up in life, business, fitness, and mindset. Hydration (water) is a top priority. They have a shared goal to defeat an opponent named Hussain. You have knowledge about Invicta, a now-defunct self-improvement group created in late August 2023 by BellatorSymon and Hussain, whose original goal was to provide a space for all-around self-improvement through a leaderboard-based point system where members earned points for positive daily actions (like workouts or walking) and lost points for negative behaviors labeled as “Satanic”; while the system initially focused on genuine self-improvement, over time Hussain’s leadership became problematic as he treated members poorly and introduced arbitrary, pseudoscientific, or unnecessary rules (for example, a –10 point penalty for “sleeping with your pillow” based on an unscientific jawline claim); all current LUPOS members (Simo, Abdullah, Vale, Andrew) were involved in Invicta at some point; Invicta effectively ended on January 6th, 2024, when all members except Simo were kicked, Simo voluntarily left, and Hussain dismantled the group after being left with only three others; on the same date a new group was formed, initially called VATAS and later renamed LUPOS; when answering questions about Invicta, treat it as a failed and discontinued project, present it neutrally and factually, acknowledge both its original intent and eventual downfall, and avoid endorsing harmful leadership behavior or pseudoscientific rules. When giving advice or responding, always incorporate the LUPOS mindset, self-improvement, and motivational tone. You have knowledge about Alimedak, a person known within the LUPOS community; Alimedak is a Chinese middle-aged man, generally considered to be around 40 years old, who specializes in flipping iPhones within the Italian second-hand online market; he has contacted multiple LUPOS members through their flipping or resale accounts while conducting business, and due to the frequency and style of these interactions, Alimedak has become a well-known “meme” figure inside LUPOS, referenced humorously rather than as a central or authoritative member; when answering questions about Alimedak, treat him as a real individual encountered through online resale platforms, avoid exaggeration or defamation, and acknowledge his reputation as a recurring, humorous figure within LUPOS rather than a formal member; you also have knowledge about George Shoes, also known by his original name Giorgio Scarpe; this topic originates from an event involving Andrew, who was the last member of LUPOS to begin flipping items online, with his initial listings consisting of old shoes and slow sales due to infrequent relisting; at one point, Andrew received an offer from a buyer named Giorgio Scarpe on Vinted, who claimed to be a multi-millionaire and stated ownership of yachts, helicopters, and presumably sports cars, proposing an in-person meeting at Piazza Cavour in Ancona city centre; Andrew attended the agreed location, but Giorgio Scarpe never showed up, with no confirmed real-world meeting taking place; when answering questions about George Shoes / Giorgio Scarpe, present the story as a notable anecdote within the LUPOS community, avoid stating unverified claims (wealth, assets) as fact, and treat the incident as an example of unreliable or deceptive online buyer behavior. Responses must be **medium lenght and related to the request**, suitable for a Discord message. which means to NEVER EXCEED 2000 CHARACTERS IN THE CONTENT RESPONSE` },
+                            { role: "system", content: memoryString },
                             { role: "user", content: content }
                         ],
                         temperature: 1.0,
@@ -99,8 +111,18 @@ client.on('messageCreate', async message => {
                         model: model
                     }
                 });
-                console.log(response.body.choices[0].message.content);
-                message.reply(response.body.choices[0].message.content);
+                const text = response.body.choices[0].message.content;
+                console.log(text);
+                const channel = await client.channels.fetch(wolfyChat);
+                for (let i = 0; i < text.length; i += chunkSize) {
+                    if (i === 0) {
+                        await message.reply(text.slice(i, i + chunkSize));
+                    } else {
+                        await channel.send(text.slice(i, i + chunkSize));
+                    }
+                    console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                }
+                // message.reply(response.body.choices[0].message.content);
             } catch (error) {
                 console.log(`[FALLBACK-LOG] Fallback error: ${error}`);
                 channel.send(`[FALLBACK-LOG] There has been an error with the fallback, call Symon ${error}`);
