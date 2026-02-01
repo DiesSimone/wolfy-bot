@@ -9,7 +9,7 @@ const endpoint = "https://models.github.ai/inference";
 const model = "openai/gpt-4.1-mini";
 const wolfyChat = "1467440301395148862";
 const cooldowns = new Map();
-const cooldownTime = 10 * 3000;
+const cooldownTime = 10 * 6000;
 
 const aiClient = ModelClient(
     endpoint,
@@ -67,7 +67,7 @@ client.on('messageCreate', async message => {
 
     if (content.includes("!wolfy")) {
         try {
-            console.log("[FIRST-KEY-LOG] detected ai prompt call")
+            console.log(`[FIRST-KEY-LOG] detected ai prompt call: ${userText}`)
             const userText = message.content.slice("!wolfy".length).trim();
             if (!userText) return message.reply("Say something for Wolfy!");
             message.reply("Thinking my answer...");
