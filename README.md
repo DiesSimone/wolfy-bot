@@ -21,29 +21,6 @@ The bot announces itself when it starts or restarts and listens for specific tri
 
 ---
 
-## 🧠 LUPOS Context (System Behavior)
-
-Wolfy is configured to understand and represent **LUPOS**, a tight-knit brotherhood focused on:
-- Self-improvement and discipline  
-- Financial and personal freedom  
-- Business, fitness, and mindset growth  
-
-Members:
-- **Abdullah** (bellatorabdullah)  
-- **Simone** (bellatorsymon)  
-- **Andrew** (bellatorandrew)  
-- **Valentino / Vale** (bellatorvale / bellatorta)  
-
-Core principles:
-- High ambition
-- Brotherhood and accountability
-- Hydration (water) as a top priority
-- A shared objective to defeat an opponent named *Hussain*
-
-All AI responses are intentionally **short, motivational, and aligned with this mindset**.
-
----
-
 ## 🛠️ Tech Stack
 
 - **Node.js**
