@@ -1,5 +1,6 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, channelLink } = require('discord.js');
+const { Client, GatewayIntentBits, channelLink, InteractionCollector } = require('discord.js');
+const { LavalinkManager } = require("lavalink-client");
 const ModelClient = require("@azure-rest/ai-inference").default;
 const { AzureKeyCredential } = require("@azure/core-auth");
 const discordToken = process.env.DISCORD_TOKEN;
@@ -27,22 +28,72 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates,
     ]
 });
 
+client.lavalink = new LavalinkManager({
+    nodes: [
+        {
+            id: "Main Node",
+            host: "lavalinkv4.serenetia.com",
+            port: 443,
+            authorization: "https://dsc.gg/ajidevserver",
+            secure: true,
+        },
+    ],
+    sendToShard: (guildId, payload) => {
+        const guild = client.guilds.cache.get(guildId);
+        if (guild) guild.shard.send(payload);
+    },
+    autoSkip: true,
+    client: {
+        id: process.env.CLIENT_ID,
+        username: "MyBot",
+    }
+});
+
+// Attach robust error handlers early to avoid unhandled 'error' crashes
+client.lavalink.on('error', (node, error) => {
+    console.error('[LAVALINK ERROR]', node?.options?.id, error);
+});
+
+if (client.lavalink.nodeManager) {
+    client.lavalink.nodeManager.on('error', (node, error) => {
+        console.error('[LAVALINK NODE-MANAGER ERROR]', node?.options?.id, error);
+    });
+}
+
+client.lavalink.on('nodeCreate', (node) => {
+    node.on('error', (err) => console.error('[LAVALINK NODE ERROR]', node.options?.id, err));
+});
+
+
+
 client.on("ready", async () => {
     try {
+        await client.lavalink.init({
+            ...client.user
+        });
         const channel = await client.channels.fetch(wolfyChat);
         channel.send("Wolfy is online, i either got rebooted by Simo or i crashed and reborn: All your current requests got deleted, i'm sorry, blame Simo not me");
+        console.log("Wolfy and Lavalink ready");
     } catch (error) {
-        console.log("Error with sending the startup message");
+        console.log(`Error with the startup: ${error}`);
     }
+});
+
+client.on("raw", (packet) => {
+    client.lavalink.sendRawData(packet);
 })
 
 client.on('messageCreate', async message => {
     const content = message.content.toLowerCase();
-    if (!message.guild || message.author.bot) return; // Ignore bots and DMs
+    if (message.author.bot) {
+        console.log("Bruh i'm out");
+        return
+    }; // Ignore bots and DMs
     if (message.channel.id !== wolfyChat && content.includes("!wolfy")) {
         message.reply("Use my own chat, damn it! I wont answer here.");
         return
@@ -50,6 +101,36 @@ client.on('messageCreate', async message => {
 
     if (content.includes("morning") || content.includes("gm")) {
         message.reply("GOOD MORNING");
+    }
+
+    if (content.includes("!play")) {
+        console.log("!play detected");
+        try {
+            const voiceChannel = message.member.voice.channel;
+            if (!voiceChannel) return message.reply("You need to be in a voice channel first.");
+
+            if (!client.lavalink) return message.reply("Lavalink is not ready yet.");
+
+            const player = client.lavalink.createPlayer({
+                guildId: message.guild.id,
+                voiceChannelId: voiceChannel.id,
+                textChannelId: message.channel.id,
+                selfDeaf: true,
+            });
+
+            await player.connect();
+
+            const res = await player.search(`ytsearch:${content.split("!play")[1].trim() || "stufo"}`);
+            if (!res.tracks[0]) return message.reply("No tracks found.");
+
+            message.reply("Now playing: " + res.tracks[0].info.title);
+            console.log(res.tracks[0]);
+
+            player.queue.add(res.tracks[0]);
+            if (!player.playing) await player.play();
+        } catch (error) {
+            console.log("Couldnt satisfy !play command from user:" + error);
+        }
     }
 
     if (!content.includes("!wolfy")) return;
@@ -125,10 +206,15 @@ client.on('messageCreate', async message => {
                 // message.reply(response.body.choices[0].message.content);
             } catch (error) {
                 console.log(`[FALLBACK-LOG] Fallback error: ${error}`);
-                channel.send(`[FALLBACK-LOG] There has been an error with the fallback, call Symon ${error}`);
+                const channel = await client.channels.fetch(wolfyChat).catch(() => null);
+                if (channel) channel.send(`[FALLBACK-LOG] There has been an error with the fallback, call Symon ${error}`);
             }
         }
     }
 });
+
+// client.on("interactionCreate", async (interaction) => {
+
+// });
 
 client.login(discordToken);
