@@ -3,7 +3,7 @@ const ModelClient = require("@azure-rest/ai-inference").default;
 const { isUnexpected } = require("@azure-rest/ai-inference");
 const { AzureKeyCredential } = require("@azure/core-auth");
 
-const token = process.env.AI_API_KEY;
+const token = process.env.GITHUB_API_KEY;
 console.log(token);
 const endpoint = "https://models.github.ai/inference";
 const model = "openai/gpt-4.1-mini";
