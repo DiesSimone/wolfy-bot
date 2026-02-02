@@ -91,7 +91,6 @@ client.on("raw", (packet) => {
 client.on('messageCreate', async message => {
     const content = message.content.toLowerCase();
     if (message.author.bot) {
-        console.log("Bruh i'm out");
         return
     }; // Ignore bots and DMs
     if (message.channel.id !== wolfyChat && content.includes("!wolfy")) {
@@ -166,6 +165,7 @@ client.on('messageCreate', async message => {
                 }
             });
             const text = response.body.choices[0].message.content;
+            console.log(response);
             console.log(text);
             const channel = await client.channels.fetch(wolfyChat);
             for (let i = 0; i < text.length; i += chunkSize) {
@@ -192,7 +192,8 @@ client.on('messageCreate', async message => {
                         model: model
                     }
                 });
-                const text = response.body.choices[0].message.content;
+                const text = response.body.choices[0].message.content
+                console.log(response);
                 console.log(text);
                 const channel = await client.channels.fetch(wolfyChat);
                 for (let i = 0; i < text.length; i += chunkSize) {
