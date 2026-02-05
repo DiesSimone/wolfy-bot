@@ -1,4 +1,7 @@
 require('dotenv').config();
+const express = require("express");
+const crypto = require("crypto");
+const app = express();
 const { Client, GatewayIntentBits, channelLink, InteractionCollector } = require('discord.js');
 const { LavalinkManager } = require("lavalink-client");
 const ModelClient = require("@azure-rest/ai-inference").default;
@@ -215,8 +218,24 @@ client.on('messageCreate', async message => {
     }
 });
 
+function verifyGitHubSignature(rawBody, signatureHeader, secret) {
+    if (!signatureHeader || !secret || !rawBody) return false;
+
+    try {
+        const hmac = crypto.createHmac("sha256", secret);
+        const digest = "sha256=" + hmac.update(rawBody).digest("hex");
+
+        return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signatureHeader));
+    } catch (error) {
+        console.error("Signature verification error:", error);
+        return false;
+    }
+}
+
+
 // client.on("interactionCreate", async (interaction) => {
 
 // });
 
 client.login(discordToken);
+app.listen(3000);
