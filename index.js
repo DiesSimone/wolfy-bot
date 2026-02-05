@@ -38,9 +38,9 @@ client.lavalink = new LavalinkManager({
     nodes: [
         {
             id: "Main Node",
-            host: "lavalinkv4.serenetia.com",
-            port: 443,
-            authorization: "https://dsc.gg/ajidevserver",
+            host: process.env.LAVALINK_HOST,
+            port: process.env.LAVALINK_PORT,
+            authorization: process.env.LAVALINK_AUTH,
             secure: true,
         },
     ],
@@ -120,7 +120,7 @@ client.on('messageCreate', async message => {
 
             await player.connect();
 
-            const res = await player.search(`ytsearch:${content.split("!play")[1].trim() || "stufo"}`);
+            const res = await player.search(`ytsearch:${content.split("!play")[1].trim()}`);
             if (!res.tracks[0]) return message.reply("No tracks found.");
 
             message.reply("Now playing: " + res.tracks[0].info.title);
