@@ -39,7 +39,7 @@ client.lavalink = new LavalinkManager({
         {
             id: "Main Node",
             host: process.env.LAVALINK_HOST,
-            port: process.env.LAVALINK_PORT,
+            port: 443,
             authorization: process.env.LAVALINK_AUTH,
             secure: true,
         },
