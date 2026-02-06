@@ -99,26 +99,26 @@ client.on('messageCreate', async message => {
         message.reply("Use my own chat, damn it! I wont answer here.");
         return
     }
-    
+
 
     if (content.includes("morning") || content.includes("gm")) {
         return message.reply(`GOOD MORNING ${process.env.EMOJI1}`);
     }
 
-    const now = Date.now();
-    const userId = message.author.id;
-
-    if (cooldowns.has(userId)) {
-        const expirationTime = cooldowns.get(userId) + cooldownTime;
-        if (now < expirationTime) {
-            const remaining = Math.ceil((expirationTime - now) / 1000);
-            return message.reply(`Wait ${remaining}s before using !wolfy again.`);
-        }
-    }
-    cooldowns.set(userId, now);
 
     if (content.includes("!play")) {
         console.log("!play detected");
+        const now = Date.now();
+        const userId = message.author.id;
+
+        if (cooldowns.has(userId)) {
+            const expirationTime = cooldowns.get(userId) + cooldownTime;
+            if (now < expirationTime) {
+                const remaining = Math.ceil((expirationTime - now) / 1000);
+                return message.reply(`Wait ${remaining}s before using !play again.`);
+            }
+        }
+        cooldowns.set(userId, now);
         try {
             const voiceChannel = message.member.voice.channel;
             if (!voiceChannel) return message.reply("You need to be in a voice channel first.");
@@ -148,8 +148,19 @@ client.on('messageCreate', async message => {
     }
 
     if (content.includes("!create")) {
+        const now = Date.now();
+        const userId = message.author.id;
+
+        if (cooldowns.has(userId)) {
+            const expirationTime = cooldowns.get(userId) + cooldownTime;
+            if (now < expirationTime) {
+                const remaining = Math.ceil((expirationTime - now) / 1000);
+                return message.reply(`Wait ${remaining}s before using !create again.`);
+            }
+        }
+        cooldowns.set(userId, now);
         try {
-            if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") ||  content.includes("gay") || content.includes("homosexuality")) {
+            if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") || content.includes("gay") || content.includes("homosexuality")) {
                 return message.reply("Are you serious? Spending your time on masturbation, porn, social media, and videogames is pathetic. You are literally sabotaging yourself and throwing your life away. Wake up. Come back when you have sensible requests and the drive to actually do something useful instead of acting like a loser.");
             }
 
@@ -219,8 +230,19 @@ client.on('messageCreate', async message => {
     }
 
     if (content.includes("!research")) {
+        const now = Date.now();
+        const userId = message.author.id;
+
+        if (cooldowns.has(userId)) {
+            const expirationTime = cooldowns.get(userId) + cooldownTime;
+            if (now < expirationTime) {
+                const remaining = Math.ceil((expirationTime - now) / 1000);
+                return message.reply(`Wait ${remaining}s before using !research again.`);
+            }
+        }
+        cooldowns.set(userId, now);
         try {
-            if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") ||  content.includes("gay") || content.includes("homosexuality")) {
+            if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") || content.includes("gay") || content.includes("homosexuality")) {
                 return message.reply("Are you serious? Spending your time on masturbation, porn, social media, and videogames is pathetic. You are literally sabotaging yourself and throwing your life away. Wake up. Come back when you have sensible requests and the drive to actually do something useful instead of acting like a loser.");
             }
 
@@ -292,6 +314,17 @@ client.on('messageCreate', async message => {
     if (!content.includes("!wolfy")) return;
 
     if (content.includes("!wolfy")) {
+        const now = Date.now();
+        const userId = message.author.id;
+
+        if (cooldowns.has(userId)) {
+            const expirationTime = cooldowns.get(userId) + cooldownTime;
+            if (now < expirationTime) {
+                const remaining = Math.ceil((expirationTime - now) / 1000);
+                return message.reply(`Wait ${remaining}s before using !wolfy again.`);
+            }
+        }
+        cooldowns.set(userId, now);
         try {
             const userText = message.content.slice("!wolfy".length).trim();
             console.log(`[!WOLFY-LOG] detected ai prompt call: ${userText}`);
