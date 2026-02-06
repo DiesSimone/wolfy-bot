@@ -109,17 +109,17 @@ client.on('messageCreate', async message => {
         return message.reply(`GOOD MORNING ${process.env.EMOJI1}`);
     }
 
-    const now = Date.now();
-    const userId = message.author.id;
+    // const now = Date.now();
+    // const userId = message.author.id;
 
-    if (cooldowns.has(userId)) {
-        const expirationTime = cooldowns.get(userId) + cooldownTime;
-        if (now < expirationTime) {
-            const remaining = Math.ceil((expirationTime - now) / 1000);
-            return message.reply(`Wait ${remaining}s before using !wolfy again.`);
-        }
-    }
-    cooldowns.set(userId, now);
+    // if (cooldowns.has(userId)) {
+    //     const expirationTime = cooldowns.get(userId) + cooldownTime;
+    //     if (now < expirationTime) {
+    //         const remaining = Math.ceil((expirationTime - now) / 1000);
+    //         return message.reply(`Wait ${remaining}s before using !wolfy again.`);
+    //     }
+    // }
+    // cooldowns.set(userId, now);
 
     if (content.includes("!play")) {
         console.log("!play detected");
