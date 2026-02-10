@@ -103,7 +103,7 @@ client.on('messageCreate', async message => {
 
 
     if (content.includes("morning") || content.includes("gm")) {
-        return message.reply(`GOOD MORNING ${process.env.EMOJI1}`);
+        return message.reply(`GOOD MORNING ${process.env.EMOJI1} ${process.env.EMOJI2} ${process.env.EMOJI3} `);
     }
 
 
