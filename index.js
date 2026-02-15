@@ -123,7 +123,12 @@ client.on('messageCreate', async message => {
 
     if (content.includes("!play")) {
         console.log("!play detected");
+        const node = client.lavalink.nodeManager.nodes.get("Main Node");
         try {
+            console.log(node.options);
+
+            node.options.host = process.env.LAVALINK_HOST
+            node.options.authorization = process.env.LAVALINK_AUTH
             const voiceChannel = message.member.voice.channel;
             if (!voiceChannel) return message.reply("You need to be in a voice channel first.");
 
@@ -148,7 +153,33 @@ client.on('messageCreate', async message => {
             player.queue.add(res.tracks[0]);
             if (!player.playing) await player.play();
         } catch (error) {
-            console.log("Couldnt satisfy !play command from user:" + error);
+            console.log("Couldnt satisfy !play command from user, going into the fallback" + error);
+            try {
+                node.options.host = process.env.LAVALINK_HOST_FALLBACK
+                node.options.authorization = process.env.LAVALINK_AUTH_FALLBACK
+                const voiceChannel = message.member.voice.channel;
+
+                player = client.lavalink.createPlayer({
+                    guildId: message.guild.id,
+                    voiceChannelId: voiceChannel.id,
+                    textChannelId: message.channel.id,
+                    selfDeaf: true,
+                });
+
+                await player.connect();
+
+                currentSong = content.split("!play")[1].trim();
+                const res = await player.search(`ytsearch:${currentSong}`);
+                if (!res.tracks[0]) return message.reply("No tracks found.");
+
+                message.reply("Now playing: " + res.tracks[0].info.title);
+                console.log(res.tracks[0]);
+
+                player.queue.add(res.tracks[0]);
+                if (!player.playing) await player.play();
+            } catch (error) {
+                console.log(`[!PLAY-FALLBACK] There has been an error with the fallback: ${error}`);
+            }
         }
     }
 
