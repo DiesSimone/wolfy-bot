@@ -122,6 +122,22 @@ client.on('messageCreate', async message => {
         return message.reply(`GOOD MORNING ${process.env.EMOJI1} ${process.env.EMOJI2} ${process.env.EMOJI3} `);
     }
 
+    if(content.includes("!queue")){
+        try {
+            // console.log(player.queue.tracks);
+            const tracks = player.queue.tracks;
+            // console.log("Variable Tracks:" + tracks);
+            let tracksString = "";
+            tracks.forEach(song => {
+                console.dir(JSON.stringify("Oo a song:" + song));
+                tracksString += `+ ${song.info.title} `;
+            });
+            // console.log(tracksString);
+            return message.reply(`Queue list: ${tracksString}`);
+        } catch (error) {
+            console.log(`[!QUEUE-ERROR] There has been an error with the !queue command: ${error}`)
+        }
+    }
 
     if (content.includes("!play")) {
         console.log("!play detected");
@@ -149,7 +165,7 @@ client.on('messageCreate', async message => {
             const res = await player.search(`ytsearch:${currentSong}`);
             if (!res.tracks[0]) return message.reply("No tracks found.");
 
-            message.reply("Now playing: " + res.tracks[0].info.title);
+            message.reply("Added to queue: " + res.tracks[0].info.title);
             console.log(res.tracks[0]);
 
             player.queue.add(res.tracks[0]);
@@ -174,7 +190,7 @@ client.on('messageCreate', async message => {
                 const res = await player.search(`ytsearch:${currentSong}`);
                 if (!res.tracks[0]) return message.reply("No tracks found.");
 
-                message.reply("Now playing: " + res.tracks[0].info.title);
+                message.reply("Added to queue: " + res.tracks[0].info.title);
                 console.log(res.tracks[0]);
 
                 player.queue.add(res.tracks[0]);
