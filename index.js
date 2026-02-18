@@ -135,7 +135,19 @@ client.on('messageCreate', async message => {
             // console.log(tracksString);
             return message.reply(`Queue list: ${tracksString}`);
         } catch (error) {
-            console.log(`[!QUEUE-ERROR] There has been an error with the !queue command: ${error}`)
+            console.log(`[!QUEUE-ERROR] There has been an error with the !queue command: ${error}`);
+            message.reply("There has been an error with the queue command");
+        }
+    }
+
+    if (content.includes("!skip")){
+        try {
+            // console.log(`PLAYER TO SKIP: ${player}`);
+            await player.stopPlaying(false, true);
+            message.reply("Song skipped succesfully");
+        } catch (error) {
+            console.log(`[!SKIP-ERROR] There has been an error with the !skip command: ${error}`);
+            message.reply("There has been an error with the skip command");
         }
     }
 
