@@ -13,6 +13,7 @@ const wolfyChat = process.env.DEDICATED_CHAT;
 const quotesChat = process.env.QUOTES_CHAT;
 const cooldowns = new Map();
 const cooldownTime = 10 * 6000;
+const quoteInterval = 15 * 60000;
 const chunkSize = 2000;
 let player;
 let loop = false;
@@ -171,10 +172,14 @@ client.on("ready", async () => {
         const quoteChannel = await client.channels.fetch(quotesChat);
         channel.send("Wolfy is online, i either got rebooted by Simo or i crashed and reborn: All your current requests got deleted, i'm sorry, blame Simo not me");
         console.log("Wolfy and Lavalink ready");
-        // await setInterval(() => {
-        //     let quote = randomQuotes[getRandomInt(0, randomQuotes.length)];
-        //     quoteChannel.send(`***${quote}***`);
-        // }, 60000);
+        await setInterval(() => {
+            const chosen = getRandomInt(0, 9);
+            if (chosen == 4) {
+                let quote = randomQuotes[getRandomInt(0, randomQuotes.length)];
+                quoteChannel.send(`***${quote}***`);
+            }
+            console.log(`[QUOTE-SYSTEM] The chosen number is ${chosen}`);
+        }, quoteInterval);
     } catch (error) {
         console.log(`Error with the startup: ${error}`);
     }
@@ -202,7 +207,7 @@ client.on('messageCreate', async message => {
     if (content.includes("!queue")) {
         try {
             // console.log(player.queue.tracks);
-            if (player === null || player === undefined){
+            if (player === null || player === undefined) {
                 return message.reply("There is no queue!");
             }
             const tracks = player.queue.tracks;
@@ -222,7 +227,7 @@ client.on('messageCreate', async message => {
 
     if (content.includes("!skip")) {
         try {
-            if (player === null || player === undefined){
+            if (player === null || player === undefined) {
                 return message.reply("No song is playing")
             }
             // console.log(`PLAYER TO SKIP: ${player}`);
@@ -299,7 +304,7 @@ client.on('messageCreate', async message => {
     if (content.includes("!loop")) {
         console.log("!loop detected");
         try {
-            if (player === null || player === undefined){
+            if (player === null || player === undefined) {
                 return message.reply("There is no player to loop");
             }
             if (loop === false) {
@@ -320,7 +325,7 @@ client.on('messageCreate', async message => {
 
     if (content.includes("!stop")) {
         try {
-            if (player === null || player === undefined){
+            if (player === null || player === undefined) {
                 return message.reply("There is no player to stop");
             }
             await player.destroy();
