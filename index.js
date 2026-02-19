@@ -171,10 +171,10 @@ client.on("ready", async () => {
         const quoteChannel = await client.channels.fetch(quotesChat);
         channel.send("Wolfy is online, i either got rebooted by Simo or i crashed and reborn: All your current requests got deleted, i'm sorry, blame Simo not me");
         console.log("Wolfy and Lavalink ready");
-        await setInterval(() => {
-            let quote = randomQuotes[getRandomInt(0, randomQuotes.length)];
-            quoteChannel.send(`***${quote}***`);
-        }, 60000);
+        // await setInterval(() => {
+        //     let quote = randomQuotes[getRandomInt(0, randomQuotes.length)];
+        //     quoteChannel.send(`***${quote}***`);
+        // }, 60000);
     } catch (error) {
         console.log(`Error with the startup: ${error}`);
     }
@@ -202,6 +202,9 @@ client.on('messageCreate', async message => {
     if (content.includes("!queue")) {
         try {
             // console.log(player.queue.tracks);
+            if (player === null || player === undefined){
+                return message.reply("There is no queue!");
+            }
             const tracks = player.queue.tracks;
             // console.log("Variable Tracks:" + tracks);
             let tracksString = "";
@@ -219,6 +222,9 @@ client.on('messageCreate', async message => {
 
     if (content.includes("!skip")) {
         try {
+            if (player === null || player === undefined){
+                return message.reply("No song is playing")
+            }
             // console.log(`PLAYER TO SKIP: ${player}`);
             await player.stopPlaying(false, true);
             message.reply("Song skipped succesfully");
@@ -293,6 +299,9 @@ client.on('messageCreate', async message => {
     if (content.includes("!loop")) {
         console.log("!loop detected");
         try {
+            if (player === null || player === undefined){
+                return message.reply("There is no player to loop");
+            }
             if (loop === false) {
                 loop = !loop;
                 player.setRepeatMode("track");
@@ -311,11 +320,14 @@ client.on('messageCreate', async message => {
 
     if (content.includes("!stop")) {
         try {
+            if (player === null || player === undefined){
+                return message.reply("There is no player to stop");
+            }
             await player.destroy();
             message.reply("Goodbye!")
         } catch (error) {
             console.log(`[!STOP-LOG] There has been an error: ${error}`);
-            message.reply("There has been an error with the request");
+            message.reply("There has been an error with the stop request");
         }
     }
 
