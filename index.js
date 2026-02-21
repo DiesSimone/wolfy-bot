@@ -1,5 +1,6 @@
 require('dotenv').config();
 const connectDb = require('./db.js');
+const Quotes = require('./models/quotes.js');
 const { Client, GatewayIntentBits } = require('discord.js');
 const { LavalinkManager } = require("lavalink-client");
 const ModelClient = require("@azure-rest/ai-inference").default;
@@ -499,6 +500,21 @@ client.on('messageCreate', async message => {
                 const channel = await client.channels.fetch(wolfyChat).catch(() => null);
                 if (channel) channel.send(`You probably went against the engine policy, pls stop`);
             }
+        }
+    }
+
+    if (content.includes('!addquote')){
+        try {
+            const quote = message.content.split("!addquote")[1];
+            const author = message.author.globalName
+            console.log(quote);
+            console.log(author);
+            Quotes.create({
+                content: quote,
+                author: author
+            });
+        } catch (error) {
+            console.log(`[!ADDQUOTE-ERROR] There has been an error with the !addquote command: ${error}`)
         }
     }
 
