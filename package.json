@@ -25,11 +25,15 @@
     "distube": "^5.2.3",
     "dotenv": "^17.2.3",
     "lavalink-client": "^2.8.0",
+    "mongoose": "^9.2.1",
     "node-fetch": "^3.3.2",
     "openai": "^6.17.0",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
-  }
+  },
+  "overrides": {
+  "undici": "^6.23.0"
+}
 }

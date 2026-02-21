@@ -1,4 +1,5 @@
 require('dotenv').config();
+const connectDb = require('./db.js');
 const { Client, GatewayIntentBits } = require('discord.js');
 const { LavalinkManager } = require("lavalink-client");
 const ModelClient = require("@azure-rest/ai-inference").default;
@@ -165,6 +166,7 @@ client.lavalink.on("trackEnd", (player, currentSong, payload) => {
 
 client.on("ready", async () => {
     try {
+        await connectDb();
         await client.lavalink.init({
             ...client.user
         });
