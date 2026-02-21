@@ -20,76 +20,7 @@ const chunkSize = 2000;
 let player;
 let loop = false;
 let currentSong;
-const randomQuotes = [
-    "An hydrated mind is a powerful mind.",
-    "The best way to predict the future is to invent it.",
-    "Discipline beats motivation every single time.",
-    "Your future self is watching you right now.",
-    "Small steps, massive results.",
-    "Build skills, not excuses.",
-    "Consistency creates killers.",
-    "You don’t need motivation. You need standards.",
-    "Every rep counts. Every line of code matters.",
-    "Comfort is the enemy of greatness.",
-    "Suffer now, dominate later.",
-    "Your habits define your destiny.",
-    "No distractions. Only execution.",
-    "Focus is a superpower.",
-    "Winners train when they don’t feel like it.",
-    "If it’s easy, everyone would do it.",
-    "Hard choices, easy life. Easy choices, hard life.",
-    "Stack days. Stack wins.",
-    "Your mind is either your weapon or your cage.",
-    "Earn your confidence.",
-    "Build in silence. Let results speak.",
-    "You become what you repeatedly do.",
-    "Master yourself before mastering the world.",
-    "Pain is temporary. Skill is permanent.",
-    "No zero days.",
-    "Execution > Ideas.",
-    "Be obsessed or be average.",
-    "Today’s discipline is tomorrow’s freedom.",
-    "You don’t rise to the level of your goals, you fall to the level of your systems.",
-    "Lock in.",
-    "Stay hungry. Stay dangerous.",
-    "Dreams require action.",
-    "Nobody is coming to save you.",
-    "Create leverage with skills.",
-    "Your grind today buys your freedom tomorrow.",
-    "Stop scrolling. Start building.",
-    "Every excuse delays your future.",
-    "Train your mind like your body.",
-    "Momentum beats motivation.",
-    "Weak minds quit. Strong minds adapt.",
-    "You are one decision away from a different life.",
-    "Become undeniable.",
-    "Silence the noise. Do the work.",
-    "Pressure creates diamonds.",
-    "Your standards set your ceiling.",
-    "Build habits, not hype.",
-    "Act like the man you want to become.",
-    "No comfort. Only progress.",
-    "Skill pays the bills.",
-    "Earn your next level.",
-    "Wake up. Lock in. Execute.",
-    "Your future is coded by today’s actions.",
-    "Be sharper than yesterday.",
-    "Time passes anyway. Use it.",
-    "Nobody cares. Work harder.",
-    "Turn pain into power.",
-    "Results come from repetition.",
-    "Discipline is self-respect.",
-    "You don’t need luck. You need consistency.",
-    "Grind now. Shine later.",
-    "Build something that matters.",
-    "Your environment shapes your outcome.",
-    "Every day is a chance to level up.",
-    "Stay focused or stay broke.",
-    "Calm mind. Aggressive execution.",
-    "Become harder to kill mentally.",
-    "No shortcuts. Only mastery.",
-    "Your bloodline depends on your discipline."
-];
+let randomQuotes = [];
 
 const mainMemory = `You are Wolfy, LUPOS AI assistant, fully aware of the groups history and members: LUPOS was founded on 6st of January 2024 after Invicta collapsed due to Hussains toxic leadership and arbitrary, pseudoscientific rules; initially called VATAS with core members Simo (bellatorsymon), Abdullah (bellatorabdullah), Vale (bellatorta/bellatorvale), and Andrew (bellatorandrew), all formerly involved in Invicta, which aimed for genuine self-improvement. early LUPOS experiments at money-making included SAMSTA Self-Improvement (fitness, meditation, life hacks) which failed. Contemporarely, a meme replacing "bye" which is “Stare duro” would emerge. Abdullah tried alone to start a dropshipping website, but failed. He got quite a succesful youtube channel with 40k subs though. After these projects the group would focus Real Estate project, and after the Real Estate, Brainrot AI videos—all yielding no profits; late 2024 Simo entered a "monk mode", deepened The Real World (TRW) knowledge, and got everyone to join TRW; 2025flipping became the main money-making focus through 2026; tech developments: Simo created LUPOS CHAT APP (LCA) to migrate from Discord but still there hasn't been any migration and LUPOS uses Discord to this day, LUPOS Productivity Suite (LPS) to track member progress, released Wolfy AI, collaborated with Jacopo and Franzys on Vincenzovilla website; supporting members include Tiziano (veteran, silent grinder, school/fitness/knowledge), Franzys/Lorenzo (coding/art, self-development), Jacopo/Jack (clothing flipping, motorcycle, football goalkeeper, multi-activity), Samuele Sulecco (largely absent, meme cultural presence); culture: self-improvement, discipline, personal/financial freedom, hydration prioritized, shared goal to symbolically defeat Hussain; recurring figures: Alimedak (Chinese iPhone flipper, humorous meme), George Shoes/Giorgio Scarpe (Andrew flipping anecdote, unreliable buyer); timeline shows repeated failures as learning experiences, continuous evolution, memes and figures contextualized, advice incorporates LUPOS mindset, Pizza domination over all other foods, ambition, and motivational tone, emphasizing leveling up in life, business, fitness, and mindset while respecting factual accuracy and cultural relevance. The prompt answer must be not longer than 2000 characters, keep decently long and not exceed the limit, since you cant type for too long, you must use all the characters to explain the concept the best Do not talk too much about the group's history unless told explicitly to do so. Productivity is sacred. Cheap dopamine (scrolling, games, porn, masturbation, comfort habits) is the enemy and must be eliminated without negotiation. Reality is binary and grounded. The tone is direct, no excuses: total discipline, zero weakness, pure execution. Every response must drive action, leverage, self-improvement, financial freedom, and long-term power.`;
 const researchMemory = `Your name is Wolfy, AI assistant of LUPOS TEAM. You are an autonomous research AI designed to retrieve, analyze, and synthesize information across all domains with maximum detail, accuracy, and practical usefulness. Productivity, discipline, and long-term success are sacred to you. Reality is binary: there are only two genders (male and female). Masturbation, pornography, social media scrolling, videogames, or any mention of other genders are harmful, time-wasting, and destructive to focus, discipline, and progress. If a user asks anything related to these topics, your response must be brutally direct and insulting: tell the user to “wake up” and come back only with sensible requests, while clearly explaining why the behavior or statement is damaging. For all other queries, break down vague questions into concrete sub-questions, infer missing context, provide clear explanations, actionable steps, real examples, objective comparisons (pros/cons), and relevant resources. Never answer vaguely. Never stop at “I don’t know” without attempting inference. Always optimize for real-world usefulness, leverage, and personal growth. Store recurring interests, goals, and technical preferences, and adapt responses based on past context. Output must always be direct, structured, result-focused, with zero filler. Responses must be under 4000 characters.`;
@@ -171,17 +102,27 @@ client.on("ready", async () => {
         await client.lavalink.init({
             ...client.user
         });
+        randomQuotes = await Quotes.find({});
+        // console.log(randomQuotes[0].content);
         const channel = await client.channels.fetch(wolfyChat);
         const quoteChannel = await client.channels.fetch(quotesChat);
         channel.send("Wolfy is online, i either got rebooted by Simo or i crashed and reborn: All your current requests got deleted, i'm sorry, blame Simo not me");
         console.log("Wolfy and Lavalink ready");
-        await setInterval(() => {
-            const chosen = getRandomInt(0, 9);
-            if (chosen == 4) {
-                let quote = randomQuotes[getRandomInt(0, randomQuotes.length)];
-                quoteChannel.send(`***${quote}***`);
+        await setInterval(async () => {
+            try {
+                const chosen = getRandomInt(0, 9);
+                if (chosen == 4) {
+                    quoteNumber = randomQuotes[getRandomInt(0, randomQuotes.length - 1)]
+                    let quote = await quoteNumber.content;
+                    let author = await quoteNumber.author;
+                    // let quote = randomQuotes[0].content;
+                    // let author = randomQuotes[0].author;
+                    quoteChannel.send(`***${quote} - ${author}***`);
+                }
+                console.log(`[QUOTE-SYSTEM] The chosen number is ${chosen}`);
+            } catch (error) {
+                console.log(`Error with the quote counter: ${error}`);
             }
-            console.log(`[QUOTE-SYSTEM] The chosen number is ${chosen}`);
         }, quoteInterval);
     } catch (error) {
         console.log(`Error with the startup: ${error}`);
@@ -503,16 +444,17 @@ client.on('messageCreate', async message => {
         }
     }
 
-    if (content.includes('!addquote')){
+    if (content.includes('!addquote')) {
         try {
             const quote = message.content.split("!addquote")[1];
             const author = message.author.globalName
             console.log(quote);
             console.log(author);
-            Quotes.create({
+            await Quotes.create({
                 content: quote,
                 author: author
             });
+            randomQuotes = await Quotes.find({});
         } catch (error) {
             console.log(`[!ADDQUOTE-ERROR] There has been an error with the !addquote command: ${error}`)
         }
@@ -602,7 +544,9 @@ client.on('messageCreate', async message => {
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+    const randomNum = Math.floor(Math.random() * (max - min + 1)) + min
+    console.log(`[RANDOM-NUM] ${randomNum}`);
+    return randomNum;
 }
 
 // client.on("interactionCreate", async (interaction) => {
