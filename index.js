@@ -13,7 +13,7 @@ const wolfyChat = process.env.DEDICATED_CHAT;
 const quotesChat = process.env.QUOTES_CHAT;
 const cooldowns = new Map();
 const cooldownTime = 10 * 6000;
-const quoteInterval = 15 * 60000;
+const quoteInterval = 60 * 60000;
 const chunkSize = 2000;
 let player;
 let loop = false;
