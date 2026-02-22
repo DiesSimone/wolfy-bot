@@ -1,7 +1,6 @@
 require('dotenv').config();
 const connectDb = require('./db.js');
 const Quotes = require('./models/quotes.js');
-const Counters = require('./models/counters.js');
 const { Client, GatewayIntentBits } = require('discord.js');
 const { LavalinkManager } = require("lavalink-client");
 const ModelClient = require("@azure-rest/ai-inference").default;
@@ -10,7 +9,6 @@ const dns = require('dns');
 const discordToken = process.env.DISCORD_TOKEN;
 const aiToken = process.env.GITHUB_API_KEY;
 const aiToken2 = process.env.GITHUB_API_KEY2;
-const counterId = process.env.COUNTERID;
 const endpoint = "https://models.github.ai/inference";
 const model = "openai/gpt-4.1-nano";
 const wolfyChat = process.env.DEDICATED_CHAT;
@@ -454,6 +452,7 @@ client.on('messageCreate', async message => {
                     author: author
                 });
                 randomQuotes = await Quotes.find({});
+                message.reply(`Quote created successfully!: ***${quote} - ${author}***`);
             } catch (error) {
                 console.log(`[!ADDQUOTE-ERROR] There has been an error with the !addquote command: ${error}`)
             }
@@ -491,11 +490,6 @@ client.on('messageCreate', async message => {
                     }
                 });
                 const text = response.body.choices[0].message.content;
-                let addCount = false;
-                if (text.toLowerCase().includes("reality is binary")) {
-                    addRealityCounter();
-                    addCount = true;
-                }
                 console.log(response);
                 console.log(text);
                 const channel = await client.channels.fetch(wolfyChat);
@@ -506,10 +500,6 @@ client.on('messageCreate', async message => {
                         await channel.send(text.slice(i, i + chunkSize));
                     }
                     console.log(`[SLICING THE RESPONSE]: i = ${i}`);
-                }
-                if (addCount) {
-                    const currentDoc = await Counters.findOne({ _id: counterId });
-                    message.reply(`Reality is binary counter increasing to: ${currentDoc.reality_counter}`);
                 }
                 // message.reply(response.body.choices[0].message.content);
             } catch (error) {
@@ -528,11 +518,6 @@ client.on('messageCreate', async message => {
                         }
                     });
                     const text = response.body.choices[0].message.content
-                    let addCount = false;
-                    if (text.toLowerCase().includes("reality is binary")) {
-                        addRealityCounter();
-                        addCount = true;
-                    }
                     console.log(response);
                     console.log(text);
                     const channel = await client.channels.fetch(wolfyChat);
@@ -544,10 +529,6 @@ client.on('messageCreate', async message => {
                         }
                         console.log(`[SLICING THE RESPONSE]: i = ${i}`);
                     }
-                    if (addCount) {
-                        const currentDoc = await Counters.findOne({ _id: counterId });
-                        message.reply(`Reality is binary counter increasing to: ${currentDoc.reality_counter}`);
-                    }
                     // message.reply(response.body.choices[0].message.content);
                 } catch (error) {
                     console.error(`[!RESEARCH-FALLBACK-LOG] Fallback error: ${error}`);
@@ -556,7 +537,7 @@ client.on('messageCreate', async message => {
                 }
             }
         }
-    } else if (message.channelId != wolfyChat && message.content.startsWith("!")) {
+    } else if (message.channelId != wolfyChat && message.content.startsWith("!")){
         message.reply(`Listen, i cant tell if you just put a random esclamation mark (!) at the beginning of the sentence or you invoked one of my fabolous commands, in case you did.... Does this seem Wolfy house to you? WE'RE LITERALLY IN <#${message.channelId}> YOU IDIOT`);
     }
 });
@@ -567,17 +548,6 @@ function getRandomInt(min, max) {
     const randomNum = Math.floor(Math.random() * (max - min + 1)) + min
     console.log(`[RANDOM-NUM] ${randomNum}`);
     return randomNum;
-}
-
-async function addRealityCounter() {
-    // Counters.create({
-    //     reality_counter: 0,
-    //     last_updated: new Date(Date.now())
-    // })
-    const currentDoc = await Counters.findOne({ _id: counterId })
-    console.log(currentDoc);
-    await Counters.findOneAndUpdate({ _id: counterId }, { $inc: { reality_counter: 1 } }, { returnDocument: 'after', runValidators: true }
-    );
 }
 
 // client.on("interactionCreate", async (interaction) => {
