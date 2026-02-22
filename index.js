@@ -82,19 +82,17 @@ client.lavalink.on('nodeCreate', (node) => {
     node.on('error', (err) => console.error('[LAVALINK NODE ERROR]', node.options?.id, err));
 });
 
-client.lavalink.on("trackStart", (player, currentSong, payload) => {
-    console.log("Now playing a song");
-})
+// client.lavalink.on("trackStart", (player, currentSong, payload) => {
+//     console.log("Now playing a song");
+// })
 
-client.lavalink.on("trackEnd", (player, currentSong, payload) => {
-    console.log("Track ended");
-    // if (loop){
-    //     player.queue.add(currentSong);
-    //     console.log("Added song on queue");
-    // }
-});
-
-
+// client.lavalink.on("trackEnd", (player, currentSong, payload) => {
+//     console.log("Track ended");
+//     // if (loop){
+//     //     player.queue.add(currentSong);
+//     //     console.log("Added song on queue");
+//     // }
+// });
 
 client.on("ready", async () => {
     try {
@@ -137,89 +135,63 @@ client.on('messageCreate', async message => {
     const content = message.content.toLowerCase();
     if (message.author.bot) {
         return
-    }; // Ignore bots and DMs
-    if (message.channel.id !== wolfyChat && (content.includes("!wolfy") || content.includes("!create") || content.includes("!research"))) {
-        message.reply("Use my own chat, damn it! I wont answer here.");
-        return
-    }
+    };
+    // if (message.channel.id !== wolfyChat && (content.includes("!wolfy") || content.includes("!create") || content.includes("!research") || content.includes("!wolfy"))) {
+    //     return message.reply("Use my own chat, damn it! I wont answer here.");
+    // }
 
-
-    if (content.includes("morning") || content.includes("gm")) {
-        return message.reply(`GOOD MORNING ${process.env.EMOJI1} ${process.env.EMOJI2} ${process.env.EMOJI3} `);
-    }
-
-    if (content.includes("!queue")) {
-        try {
-            // console.log(player.queue.tracks);
-            if (player === null || player === undefined) {
-                return message.reply("There is no queue!");
-            }
-            const tracks = player.queue.tracks;
-            // console.log("Variable Tracks:" + tracks);
-            let tracksString = "";
-            tracks.forEach(song => {
-                console.dir(JSON.stringify("Oo a song:" + song));
-                tracksString += `+ ${song.info.title} `;
-            });
-            // console.log(tracksString);
-            return message.reply(`Queue list: ${tracksString}`);
-        } catch (error) {
-            console.log(`[!QUEUE-ERROR] There has been an error with the !queue command: ${error}`);
-            message.reply("There has been an error with the queue command");
+    if (message.channel.id == wolfyChat && content.startsWith("!")) {
+        if (content.includes("morning") || content.includes("gm")) {
+            return message.reply(`GOOD MORNING ${process.env.EMOJI1} ${process.env.EMOJI2} ${process.env.EMOJI3} `);
         }
-    }
 
-    if (content.includes("!skip")) {
-        try {
-            if (player === null || player === undefined) {
-                return message.reply("No song is playing")
-            }
-            // console.log(`PLAYER TO SKIP: ${player}`);
-            await player.stopPlaying(false, true);
-            message.reply("Song skipped succesfully");
-        } catch (error) {
-            console.log(`[!SKIP-ERROR] There has been an error with the !skip command: ${error}`);
-            message.reply("There has been an error with the skip command");
-        }
-    }
-
-    if (content.includes("!play")) {
-        console.log("!play detected");
-        const node = client.lavalink.nodeManager.nodes.get("Main Node");
-        try {
-            console.log(node.options);
-
-            node.options.host = process.env.LAVALINK_HOST
-            node.options.authorization = process.env.LAVALINK_AUTH
-            const voiceChannel = message.member.voice.channel;
-            if (!voiceChannel) return message.reply("You need to be in a voice channel first.");
-
-            if (!client.lavalink) return message.reply("Lavalink is not ready yet.");
-
-            player = client.lavalink.createPlayer({
-                guildId: message.guild.id,
-                voiceChannelId: voiceChannel.id,
-                textChannelId: message.channel.id,
-                selfDeaf: true,
-            });
-
-            await player.connect();
-
-            currentSong = content.split("!play")[1].trim();
-            const res = await player.search(`ytsearch:${currentSong}`);
-            if (!res.tracks[0]) return message.reply("No tracks found.");
-
-            message.reply("Added to queue: " + res.tracks[0].info.title);
-            console.log(res.tracks[0]);
-
-            player.queue.add(res.tracks[0]);
-            if (!player.playing) await player.play();
-        } catch (error) {
-            console.log("Couldnt satisfy !play command from user, going into the fallback" + error);
+        if (content.includes("!queue")) {
             try {
-                node.options.host = process.env.LAVALINK_HOST_FALLBACK
-                node.options.authorization = process.env.LAVALINK_AUTH_FALLBACK
+                // console.log(player.queue.tracks);
+                if (player === null || player === undefined) {
+                    return message.reply("There is no queue!");
+                }
+                const tracks = player.queue.tracks;
+                // console.log("Variable Tracks:" + tracks);
+                let tracksString = "";
+                tracks.forEach(song => {
+                    console.dir(JSON.stringify("Oo a song:" + song));
+                    tracksString += `+ ${song.info.title} `;
+                });
+                // console.log(tracksString);
+                return message.reply(`Queue list: ${tracksString}`);
+            } catch (error) {
+                console.log(`[!QUEUE-ERROR] There has been an error with the !queue command: ${error}`);
+                message.reply("There has been an error with the queue command");
+            }
+        }
+
+        if (content.includes("!skip")) {
+            try {
+                if (player === null || player === undefined) {
+                    return message.reply("No song is playing")
+                }
+                // console.log(`PLAYER TO SKIP: ${player}`);
+                await player.stopPlaying(false, true);
+                message.reply("Song skipped succesfully");
+            } catch (error) {
+                console.log(`[!SKIP-ERROR] There has been an error with the !skip command: ${error}`);
+                message.reply("There has been an error with the skip command");
+            }
+        }
+
+        if (content.includes("!play")) {
+            console.log("!play detected");
+            const node = client.lavalink.nodeManager.nodes.get("Main Node");
+            try {
+                console.log(node.options);
+
+                node.options.host = process.env.LAVALINK_HOST
+                node.options.authorization = process.env.LAVALINK_AUTH
                 const voiceChannel = message.member.voice.channel;
+                if (!voiceChannel) return message.reply("You need to be in a voice channel first.");
+
+                if (!client.lavalink) return message.reply("Lavalink is not ready yet.");
 
                 player = client.lavalink.createPlayer({
                     guildId: message.guild.id,
@@ -240,97 +212,94 @@ client.on('messageCreate', async message => {
                 player.queue.add(res.tracks[0]);
                 if (!player.playing) await player.play();
             } catch (error) {
-                console.log(`[!PLAY-FALLBACK] There has been an error with the fallback: ${error}`);
-            }
-        }
-    }
+                console.log("Couldnt satisfy !play command from user, going into the fallback" + error);
+                try {
+                    node.options.host = process.env.LAVALINK_HOST_FALLBACK
+                    node.options.authorization = process.env.LAVALINK_AUTH_FALLBACK
+                    const voiceChannel = message.member.voice.channel;
 
-    if (content.includes("!loop")) {
-        console.log("!loop detected");
-        try {
-            if (player === null || player === undefined) {
-                return message.reply("There is no player to loop");
-            }
-            if (loop === false) {
-                loop = !loop;
-                player.setRepeatMode("track");
-                message.reply("Loop activated");
-            } else {
-                loop = !loop;
-                player.setRepeatMode("off");
-                message.reply("Loop deactivated");
-            }
-            console.log(loop);
-        } catch (error) {
-            console.log(error);
-            message.reply("There has been an error with the !loop command");
-        }
-    }
+                    player = client.lavalink.createPlayer({
+                        guildId: message.guild.id,
+                        voiceChannelId: voiceChannel.id,
+                        textChannelId: message.channel.id,
+                        selfDeaf: true,
+                    });
 
-    if (content.includes("!stop")) {
-        try {
-            if (player === null || player === undefined) {
-                return message.reply("There is no player to stop");
-            }
-            await player.destroy();
-            message.reply("Goodbye!")
-        } catch (error) {
-            console.log(`[!STOP-LOG] There has been an error: ${error}`);
-            message.reply("There has been an error with the stop request");
-        }
-    }
+                    await player.connect();
 
-    if (content.includes("!create")) {
-        const now = Date.now();
-        const userId = message.author.id;
+                    currentSong = content.split("!play")[1].trim();
+                    const res = await player.search(`ytsearch:${currentSong}`);
+                    if (!res.tracks[0]) return message.reply("No tracks found.");
 
-        if (cooldowns.has(userId)) {
-            const expirationTime = cooldowns.get(userId) + cooldownTime;
-            if (now < expirationTime) {
-                const remaining = Math.ceil((expirationTime - now) / 1000);
-                return message.reply(`Wait ${remaining}s before using !create again.`);
-            }
-        }
-        cooldowns.set(userId, now);
-        try {
-            if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") || content.includes("gay") || content.includes("homosexuality")) {
-                return message.reply("Are you serious? Spending your time on masturbation, porn, social media, and videogames is pathetic. You are literally sabotaging yourself and throwing your life away. Wake up. Come back when you have sensible requests and the drive to actually do something useful instead of acting like a loser.");
-            }
+                    message.reply("Added to queue: " + res.tracks[0].info.title);
+                    console.log(res.tracks[0]);
 
-            const userText = message.content.slice("!create".length).trim();
-            console.log(`[!CREATE-LOG] detected ai prompt call: ${userText}`);
-
-            if (!userText) return message.reply("Say something for Wolfy!");
-            message.reply("Thinking my answer...");
-            const response = await aiClient.path("/chat/completions").post({
-                body: {
-                    messages: [
-                        { role: "system", content: createMemory },
-                        { role: "user", content: content }
-                    ],
-                    temperature: 1.0,
-                    top_p: 1.0,
-                    model: model
+                    player.queue.add(res.tracks[0]);
+                    if (!player.playing) await player.play();
+                } catch (error) {
+                    console.log(`[!PLAY-FALLBACK] There has been an error with the fallback: ${error}`);
                 }
-            });
-            const text = response.body.choices[0].message.content;
-            console.log(response);
-            console.log(text);
-            const channel = await client.channels.fetch(wolfyChat);
-            for (let i = 0; i < text.length; i += chunkSize) {
-                if (i === 0) {
-                    await message.reply(text.slice(i, i + chunkSize));
-                } else {
-                    await channel.send(text.slice(i, i + chunkSize));
-                }
-                console.log(`[SLICING THE RESPONSE]: i = ${i}`);
             }
-            // message.reply(response.body.choices[0].message.content);
-        } catch (error) {
+        }
+
+        if (content.includes("!loop")) {
+            console.log("!loop detected");
             try {
-                console.log("[!CREATE-FALLBACK-LOG] Entering the fallback");
-                console.error(`[!CREATE-FALLBACK-LOG] error: ${error}`);
-                const response = await aiClient2.path("/chat/completions").post({
+                if (player === null || player === undefined) {
+                    return message.reply("There is no player to loop");
+                }
+                if (loop === false) {
+                    loop = !loop;
+                    player.setRepeatMode("track");
+                    message.reply("Loop activated");
+                } else {
+                    loop = !loop;
+                    player.setRepeatMode("off");
+                    message.reply("Loop deactivated");
+                }
+                console.log(loop);
+            } catch (error) {
+                console.log(error);
+                message.reply("There has been an error with the !loop command");
+            }
+        }
+
+        if (content.includes("!stop")) {
+            try {
+                if (player === null || player === undefined) {
+                    return message.reply("There is no player to stop");
+                }
+                await player.destroy();
+                message.reply("Goodbye!")
+            } catch (error) {
+                console.log(`[!STOP-LOG] There has been an error: ${error}`);
+                message.reply("There has been an error with the stop request");
+            }
+        }
+
+        if (content.includes("!create")) {
+            const now = Date.now();
+            const userId = message.author.id;
+
+            if (cooldowns.has(userId)) {
+                const expirationTime = cooldowns.get(userId) + cooldownTime;
+                if (now < expirationTime) {
+                    const remaining = Math.ceil((expirationTime - now) / 1000);
+                    return message.reply(`Wait ${remaining}s before using !create again.`);
+                }
+            }
+            cooldowns.set(userId, now);
+            try {
+                if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") || content.includes("gay") || content.includes("homosexuality")) {
+                    return message.reply("Are you serious? Spending your time on masturbation, porn, social media, and videogames is pathetic. You are literally sabotaging yourself and throwing your life away. Wake up. Come back when you have sensible requests and the drive to actually do something useful instead of acting like a loser.");
+                }
+
+                const userText = message.content.slice("!create".length).trim();
+                console.log(`[!CREATE-LOG] detected ai prompt call: ${userText}`);
+
+                if (!userText) return message.reply("Say something for Wolfy!");
+                message.reply("Thinking my answer...");
+                const response = await aiClient.path("/chat/completions").post({
                     body: {
                         messages: [
                             { role: "system", content: createMemory },
@@ -341,7 +310,7 @@ client.on('messageCreate', async message => {
                         model: model
                     }
                 });
-                const text = response.body.choices[0].message.content
+                const text = response.body.choices[0].message.content;
                 console.log(response);
                 console.log(text);
                 const channel = await client.channels.fetch(wolfyChat);
@@ -355,64 +324,64 @@ client.on('messageCreate', async message => {
                 }
                 // message.reply(response.body.choices[0].message.content);
             } catch (error) {
-                console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
-                const channel = await client.channels.fetch(wolfyChat).catch(() => null);
-                if (channel) channel.send(`You probably went against the engine policy, pls stop`);
+                try {
+                    console.log("[!CREATE-FALLBACK-LOG] Entering the fallback");
+                    console.error(`[!CREATE-FALLBACK-LOG] error: ${error}`);
+                    const response = await aiClient2.path("/chat/completions").post({
+                        body: {
+                            messages: [
+                                { role: "system", content: createMemory },
+                                { role: "user", content: content }
+                            ],
+                            temperature: 1.0,
+                            top_p: 1.0,
+                            model: model
+                        }
+                    });
+                    const text = response.body.choices[0].message.content
+                    console.log(response);
+                    console.log(text);
+                    const channel = await client.channels.fetch(wolfyChat);
+                    for (let i = 0; i < text.length; i += chunkSize) {
+                        if (i === 0) {
+                            await message.reply(text.slice(i, i + chunkSize));
+                        } else {
+                            await channel.send(text.slice(i, i + chunkSize));
+                        }
+                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                    }
+                    // message.reply(response.body.choices[0].message.content);
+                } catch (error) {
+                    console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
+                    const channel = await client.channels.fetch(wolfyChat).catch(() => null);
+                    if (channel) channel.send(`You probably went against the engine policy, pls stop`);
+                }
             }
         }
-    }
 
-    if (content.includes("!research")) {
-        const now = Date.now();
-        const userId = message.author.id;
+        if (content.includes("!research")) {
+            const now = Date.now();
+            const userId = message.author.id;
 
-        if (cooldowns.has(userId)) {
-            const expirationTime = cooldowns.get(userId) + cooldownTime;
-            if (now < expirationTime) {
-                const remaining = Math.ceil((expirationTime - now) / 1000);
-                return message.reply(`Wait ${remaining}s before using !research again.`);
-            }
-        }
-        cooldowns.set(userId, now);
-        try {
-            if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") || content.includes("gay") || content.includes("homosexuality")) {
-                return message.reply("Are you serious? Spending your time on masturbation, porn, social media, and videogames is pathetic. You are literally sabotaging yourself and throwing your life away. Wake up. Come back when you have sensible requests and the drive to actually do something useful instead of acting like a loser.");
-            }
-
-            const userText = message.content.slice("!research".length).trim();
-            console.log(`[!RESEARCH-LOG] detected ai prompt call: ${userText}`);
-
-            if (!userText) return message.reply("Say something for Wolfy!");
-            message.reply("Thinking my answer...");
-            const response = await aiClient.path("/chat/completions").post({
-                body: {
-                    messages: [
-                        { role: "system", content: researchMemory },
-                        { role: "user", content: content }
-                    ],
-                    temperature: 1.0,
-                    top_p: 1.0,
-                    model: model
+            if (cooldowns.has(userId)) {
+                const expirationTime = cooldowns.get(userId) + cooldownTime;
+                if (now < expirationTime) {
+                    const remaining = Math.ceil((expirationTime - now) / 1000);
+                    return message.reply(`Wait ${remaining}s before using !research again.`);
                 }
-            });
-            const text = response.body.choices[0].message.content;
-            console.log(response);
-            console.log(text);
-            const channel = await client.channels.fetch(wolfyChat);
-            for (let i = 0; i < text.length; i += chunkSize) {
-                if (i === 0) {
-                    await message.reply(text.slice(i, i + chunkSize));
-                } else {
-                    await channel.send(text.slice(i, i + chunkSize));
-                }
-                console.log(`[SLICING THE RESPONSE]: i = ${i}`);
             }
-            // message.reply(response.body.choices[0].message.content);
-        } catch (error) {
+            cooldowns.set(userId, now);
             try {
-                console.log("[!RESEARCH-FALLBACK-LOG] Entering the fallback");
-                console.error(`[!RESEARCH-FALLBACK-LOG] error: ${error}`);
-                const response = await aiClient2.path("/chat/completions").post({
+                if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") || content.includes("gay") || content.includes("homosexuality")) {
+                    return message.reply("Are you serious? Spending your time on masturbation, porn, social media, and videogames is pathetic. You are literally sabotaging yourself and throwing your life away. Wake up. Come back when you have sensible requests and the drive to actually do something useful instead of acting like a loser.");
+                }
+
+                const userText = message.content.slice("!research".length).trim();
+                console.log(`[!RESEARCH-LOG] detected ai prompt call: ${userText}`);
+
+                if (!userText) return message.reply("Say something for Wolfy!");
+                message.reply("Thinking my answer...");
+                const response = await aiClient.path("/chat/completions").post({
                     body: {
                         messages: [
                             { role: "system", content: researchMemory },
@@ -423,7 +392,7 @@ client.on('messageCreate', async message => {
                         model: model
                     }
                 });
-                const text = response.body.choices[0].message.content
+                const text = response.body.choices[0].message.content;
                 console.log(response);
                 console.log(text);
                 const channel = await client.channels.fetch(wolfyChat);
@@ -437,78 +406,78 @@ client.on('messageCreate', async message => {
                 }
                 // message.reply(response.body.choices[0].message.content);
             } catch (error) {
-                console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
-                const channel = await client.channels.fetch(wolfyChat).catch(() => null);
-                if (channel) channel.send(`You probably went against the engine policy, pls stop`);
-            }
-        }
-    }
-
-    if (content.includes('!addquote')) {
-        try {
-            const quote = message.content.split("!addquote")[1];
-            const author = message.author.globalName
-            console.log(quote);
-            console.log(author);
-            await Quotes.create({
-                content: quote,
-                author: author
-            });
-            randomQuotes = await Quotes.find({});
-        } catch (error) {
-            console.log(`[!ADDQUOTE-ERROR] There has been an error with the !addquote command: ${error}`)
-        }
-    }
-
-    if (!content.includes("!wolfy")) return;
-
-    if (content.includes("!wolfy")) {
-        const now = Date.now();
-        const userId = message.author.id;
-
-        if (cooldowns.has(userId)) {
-            const expirationTime = cooldowns.get(userId) + cooldownTime;
-            if (now < expirationTime) {
-                const remaining = Math.ceil((expirationTime - now) / 1000);
-                return message.reply(`Wait ${remaining}s before using !wolfy again.`);
-            }
-        }
-        cooldowns.set(userId, now);
-        try {
-            const userText = message.content.slice("!wolfy".length).trim();
-            console.log(`[!WOLFY-LOG] detected ai prompt call: ${userText}`);
-
-            if (!userText) return message.reply("Say something for Wolfy!");
-            message.reply("Thinking my answer...");
-            const response = await aiClient.path("/chat/completions").post({
-                body: {
-                    messages: [
-                        { role: "system", content: mainMemory },
-                        { role: "user", content: content }
-                    ],
-                    temperature: 1.0,
-                    top_p: 1.0,
-                    model: model
+                try {
+                    console.log("[!RESEARCH-FALLBACK-LOG] Entering the fallback");
+                    console.error(`[!RESEARCH-FALLBACK-LOG] error: ${error}`);
+                    const response = await aiClient2.path("/chat/completions").post({
+                        body: {
+                            messages: [
+                                { role: "system", content: researchMemory },
+                                { role: "user", content: content }
+                            ],
+                            temperature: 1.0,
+                            top_p: 1.0,
+                            model: model
+                        }
+                    });
+                    const text = response.body.choices[0].message.content
+                    console.log(response);
+                    console.log(text);
+                    const channel = await client.channels.fetch(wolfyChat);
+                    for (let i = 0; i < text.length; i += chunkSize) {
+                        if (i === 0) {
+                            await message.reply(text.slice(i, i + chunkSize));
+                        } else {
+                            await channel.send(text.slice(i, i + chunkSize));
+                        }
+                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                    }
+                    // message.reply(response.body.choices[0].message.content);
+                } catch (error) {
+                    console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
+                    const channel = await client.channels.fetch(wolfyChat).catch(() => null);
+                    if (channel) channel.send(`You probably went against the engine policy, pls stop`);
                 }
-            });
-            const text = response.body.choices[0].message.content;
-            console.log(response);
-            console.log(text);
-            const channel = await client.channels.fetch(wolfyChat);
-            for (let i = 0; i < text.length; i += chunkSize) {
-                if (i === 0) {
-                    await message.reply(text.slice(i, i + chunkSize));
-                } else {
-                    await channel.send(text.slice(i, i + chunkSize));
-                }
-                console.log(`[SLICING THE RESPONSE]: i = ${i}`);
             }
-            // message.reply(response.body.choices[0].message.content);
-        } catch (error) {
+        }
+
+        if (content.includes('!addquote')) {
             try {
-                console.log("!RESEARCH-[FALLBACK-LOG] Entering the fallback");
-                console.error(`!RESEARCH-[FALLBACK-LOG] error: ${error}`);
-                const response = await aiClient2.path("/chat/completions").post({
+                const quote = message.content.split("!addquote")[1];
+                const author = message.author.globalName
+                console.log(quote);
+                console.log(author);
+                await Quotes.create({
+                    content: quote,
+                    author: author
+                });
+                randomQuotes = await Quotes.find({});
+            } catch (error) {
+                console.log(`[!ADDQUOTE-ERROR] There has been an error with the !addquote command: ${error}`)
+            }
+        }
+
+        // if (!content.includes("!wolfy")) return;
+
+        if (content.includes("!wolfy")) {
+            const now = Date.now();
+            const userId = message.author.id;
+
+            if (cooldowns.has(userId)) {
+                const expirationTime = cooldowns.get(userId) + cooldownTime;
+                if (now < expirationTime) {
+                    const remaining = Math.ceil((expirationTime - now) / 1000);
+                    return message.reply(`Wait ${remaining}s before using !wolfy again.`);
+                }
+            }
+            cooldowns.set(userId, now);
+            try {
+                const userText = message.content.slice("!wolfy".length).trim();
+                console.log(`[!WOLFY-LOG] detected ai prompt call: ${userText}`);
+
+                if (!userText) return message.reply("Say something for Wolfy!");
+                message.reply("Thinking my answer...");
+                const response = await aiClient.path("/chat/completions").post({
                     body: {
                         messages: [
                             { role: "system", content: mainMemory },
@@ -519,7 +488,7 @@ client.on('messageCreate', async message => {
                         model: model
                     }
                 });
-                const text = response.body.choices[0].message.content
+                const text = response.body.choices[0].message.content;
                 console.log(response);
                 console.log(text);
                 const channel = await client.channels.fetch(wolfyChat);
@@ -533,11 +502,42 @@ client.on('messageCreate', async message => {
                 }
                 // message.reply(response.body.choices[0].message.content);
             } catch (error) {
-                console.error(`[!RESEARCH-FALLBACK-LOG] Fallback error: ${error}`);
-                const channel = await client.channels.fetch(wolfyChat).catch(() => null);
-                if (channel) channel.send(`You probably went against the engine policy, pls stop`);
+                try {
+                    console.log("!RESEARCH-[FALLBACK-LOG] Entering the fallback");
+                    console.error(`!RESEARCH-[FALLBACK-LOG] error: ${error}`);
+                    const response = await aiClient2.path("/chat/completions").post({
+                        body: {
+                            messages: [
+                                { role: "system", content: mainMemory },
+                                { role: "user", content: content }
+                            ],
+                            temperature: 1.0,
+                            top_p: 1.0,
+                            model: model
+                        }
+                    });
+                    const text = response.body.choices[0].message.content
+                    console.log(response);
+                    console.log(text);
+                    const channel = await client.channels.fetch(wolfyChat);
+                    for (let i = 0; i < text.length; i += chunkSize) {
+                        if (i === 0) {
+                            await message.reply(text.slice(i, i + chunkSize));
+                        } else {
+                            await channel.send(text.slice(i, i + chunkSize));
+                        }
+                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                    }
+                    // message.reply(response.body.choices[0].message.content);
+                } catch (error) {
+                    console.error(`[!RESEARCH-FALLBACK-LOG] Fallback error: ${error}`);
+                    const channel = await client.channels.fetch(wolfyChat).catch(() => null);
+                    if (channel) channel.send(`You probably went against the engine policy, pls stop`);
+                }
             }
         }
+    } else if (message.channelId != wolfyChat && message.content.startsWith("!")){
+        message.reply(`Listen, i cant tell if you just put a random esclamation mark (!) at the beginning of the sentence or you invoked one of my fabolous commands, in case you did.... Does this seem Wolfy house to you? WE'RE LITERALLY IN <#${message.channelId}> YOU IDIOT`);
     }
 });
 
