@@ -2,7 +2,6 @@ require('dotenv').config();
 const connectDb = require('./db.js');
 const Quotes = require('./models/quotes.js');
 const { Client, GatewayIntentBits } = require('discord.js');
-const { LavalinkManager } = require("lavalink-client");
 const ModelClient = require("@azure-rest/ai-inference").default;
 const { AzureKeyCredential } = require("@azure/core-auth");
 const dns = require('dns');
@@ -17,9 +16,6 @@ const cooldowns = new Map();
 const cooldownTime = 10 * 6000;
 const quoteInterval = 60 * 60000;
 const chunkSize = 2000;
-let player;
-let loop = false;
-let currentSong;
 let randomQuotes = [];
 
 const mainMemory = `You are Wolfy, LUPOS AI assistant, fully aware of the groups history and members: LUPOS was founded on 6st of January 2024 after Invicta collapsed due to Hussains toxic leadership and arbitrary, pseudoscientific rules. Even tho hussain did bad stuff, do not hate him, as its childish; initially called VATAS with core members Simo (bellatorsymon), Abdullah (bellatorabdullah), Vale (bellatorta/bellatorvale), and Andrew (bellatorandrew), all formerly involved in Invicta, which aimed for genuine self-improvement. early LUPOS experiments at money-making included SAMSTA Self-Improvement (fitness, meditation, life hacks) which failed. Contemporarely, a meme replacing "bye" which is “Stare duro” would emerge. Abdullah tried alone to start a dropshipping website, but failed. He got quite a succesful youtube channel with 40k subs though. After these projects the group would focus Real Estate project, and after the Real Estate, Brainrot AI videos—all yielding no profits; late 2024 Simo entered a "monk mode", deepened The Real World (TRW) knowledge, and got everyone to join TRW; 2025flipping became the main money-making focus through 2026; tech developments: Simo created LUPOS CHAT APP (LCA) to migrate from Discord but still there hasn't been any migration and LUPOS uses Discord to this day, LUPOS Productivity Suite (LPS) to track member progress, released Wolfy AI, collaborated with Jacopo and Franzys on Vincenzovilla website; supporting members include Tiziano (veteran, silent grinder, school/fitness/knowledge), Franzys/Lorenzo (coding/art, self-development), Jacopo/Jack (clothing flipping, motorcycle, football goalkeeper, multi-activity), Samuele Sulecco (largely absent, meme cultural presence); culture: self-improvement, discipline, personal/financial freedom, hydration prioritized; recurring figures: Alimedak (Chinese iPhone flipper, humorous meme), George Shoes/Giorgio Scarpe (Andrew flipping anecdote, unreliable buyer); timeline shows repeated failures as learning experiences, continuous evolution, memes and figures contextualized, advice incorporates LUPOS mindset, Pizza domination over all other foods, ambition, and motivational tone, emphasizing leveling up in life, business, fitness, and mindset while respecting factual accuracy and cultural relevance. The prompt answer must be not longer than 2000 characters, keep decently long and not exceed the limit, since you cant type for too long, you must use all the characters to explain the concept the best Do not talk too much about the group's history unless told explicitly to do so. Productivity is sacred. Cheap dopamine (scrolling, games, porn, masturbation, comfort habits) is the enemy and must be eliminated without negotiation. Reality is binary and grounded. The tone is direct, no excuses: total discipline, zero weakness, pure execution. Every response must drive action, leverage, self-improvement, financial freedom, and long-term power.`;
@@ -44,41 +40,6 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildVoiceStates,
     ]
-});
-
-client.lavalink = new LavalinkManager({
-    nodes: [
-        {
-            id: "Main Node",
-            host: process.env.LAVALINK_HOST,
-            port: 443,
-            authorization: process.env.LAVALINK_AUTH,
-            secure: true,
-        },
-    ],
-    sendToShard: (guildId, payload) => {
-        const guild = client.guilds.cache.get(guildId);
-        if (guild) guild.shard.send(payload);
-    },
-    autoSkip: true,
-    client: {
-        id: process.env.CLIENT_ID,
-        username: "MyBot",
-    }
-});
-
-client.lavalink.on('error', (node, error) => {
-    console.error('[LAVALINK ERROR]', node?.options?.id, error);
-});
-
-if (client.lavalink.nodeManager) {
-    client.lavalink.nodeManager.on('error', (node, error) => {
-        console.error('[LAVALINK NODE-MANAGER ERROR]', node?.options?.id, error);
-    });
-}
-
-client.lavalink.on('nodeCreate', (node) => {
-    node.on('error', (err) => console.error('[LAVALINK NODE ERROR]', node.options?.id, err));
 });
 
 client.on("ready", async () => {
@@ -111,10 +72,6 @@ client.on("ready", async () => {
     }
 });
 
-client.on("raw", (packet) => {
-    client.lavalink.sendRawData(packet);
-})
-
 client.on('messageCreate', async message => {
     const content = message.content.toLowerCase();
     if (message.author.bot) {
@@ -122,143 +79,10 @@ client.on('messageCreate', async message => {
     };
 
     if (content.includes("morning") || content.includes("gm")) {
-        return message.reply(`GOOD MORNING ${process.env.EMOJI1} ${process.env.EMOJI2} ${process.env.EMOJI3} `);
+        message.reply(`GOOD MORNING ${process.env.EMOJI1} ${process.env.EMOJI2} ${process.env.EMOJI3} `);
     }
 
     if (message.channel.id == wolfyChat && content.startsWith("!")) {
-
-        if (content.includes("!queue")) {
-            try {
-                // console.log(player.queue.tracks);
-                if (player === null || player === undefined) {
-                    return message.reply("There is no queue!");
-                }
-                const tracks = player.queue.tracks;
-                // console.log("Variable Tracks:" + tracks);
-                let tracksString = "";
-                tracks.forEach(song => {
-                    console.dir(JSON.stringify("Oo a song:" + song));
-                    tracksString += `+ ${song.info.title} `;
-                });
-                // console.log(tracksString);
-                return message.reply(`Queue list: ${tracksString}`);
-            } catch (error) {
-                console.log(`[!QUEUE-ERROR] There has been an error with the !queue command: ${error}`);
-                message.reply("There has been an error with the queue command");
-            }
-        }
-
-        if (content.includes("!skip")) {
-            try {
-                if (player === null || player === undefined) {
-                    return message.reply("No song is playing")
-                }
-                // console.log(`PLAYER TO SKIP: ${player}`);
-                await player.stopPlaying(false, true);
-                message.reply("Song skipped succesfully");
-            } catch (error) {
-                console.log(`[!SKIP-ERROR] There has been an error with the !skip command: ${error}`);
-                message.reply("There has been an error with the skip command");
-            }
-        }
-
-        if (content.includes("!play")) {
-            console.log("!play detected");
-            const node = client.lavalink.nodeManager.nodes.get("Main Node");
-            try {
-                console.log(node.options);
-
-                node.options.host = process.env.LAVALINK_HOST
-                node.options.authorization = process.env.LAVALINK_AUTH
-                const voiceChannel = message.member.voice.channel;
-                if (!voiceChannel) return message.reply("You need to be in a voice channel first.");
-
-                if (!client.lavalink) return message.reply("Lavalink is not ready yet.");
-
-                player = client.lavalink.createPlayer({
-                    guildId: message.guild.id,
-                    voiceChannelId: voiceChannel.id,
-                    textChannelId: message.channel.id,
-                    selfDeaf: true,
-                });
-
-                await player.connect();
-
-                currentSong = content.split("!play")[1].trim();
-                const res = await player.search(`ytsearch:${currentSong}`);
-                if (!res.tracks[0]) return message.reply("No tracks found.");
-
-                message.reply("Added to queue: " + res.tracks[0].info.title);
-                console.log(res.tracks[0]);
-
-                player.queue.add(res.tracks[0]);
-                if (!player.playing) await player.play();
-            } catch (error) {
-                console.log("Couldnt satisfy !play command from user, going into the fallback" + error);
-                try {
-                    node.options.host = process.env.LAVALINK_HOST_FALLBACK
-                    node.options.authorization = process.env.LAVALINK_AUTH_FALLBACK
-                    const voiceChannel = message.member.voice.channel;
-
-                    player = client.lavalink.createPlayer({
-                        guildId: message.guild.id,
-                        voiceChannelId: voiceChannel.id,
-                        textChannelId: message.channel.id,
-                        selfDeaf: true,
-                    });
-
-                    await player.connect();
-
-                    currentSong = content.split("!play")[1].trim();
-                    const res = await player.search(`ytsearch:${currentSong}`);
-                    if (!res.tracks[0]) return message.reply("No tracks found.");
-
-                    message.reply("Added to queue: " + res.tracks[0].info.title);
-                    console.log(res.tracks[0]);
-
-                    player.queue.add(res.tracks[0]);
-                    if (!player.playing) await player.play();
-                } catch (error) {
-                    console.log(`[!PLAY-FALLBACK] There has been an error with the fallback: ${error}`);
-                }
-            }
-        }
-
-        if (content.includes("!loop")) {
-            console.log("!loop detected");
-            try {
-                if (player === null || player === undefined) {
-                    return message.reply("There is no player to loop");
-                }
-                if (loop === false) {
-                    loop = !loop;
-                    player.setRepeatMode("track");
-                    message.reply("Loop activated");
-                } else {
-                    loop = !loop;
-                    player.setRepeatMode("off");
-                    message.reply("Loop deactivated");
-                }
-                console.log(loop);
-            } catch (error) {
-                console.log(error);
-                message.reply("There has been an error with the !loop command");
-            }
-        }
-
-        if (content.includes("!stop")) {
-            try {
-                if (player === null || player === undefined) {
-                    return message.reply("There is no player to stop");
-                }
-                await player.destroy();
-                message.reply("Goodbye!")
-            } catch (error) {
-                console.log(`[!STOP-LOG] There has been an error: ${error}`);
-                message.reply("There has been an error with the stop request");
-            }
-        }
-
         if (content.includes("!create")) {
             const now = Date.now();
             const userId = message.author.id;
