@@ -45,14 +45,11 @@ const client = new Client({
 client.on("ready", async () => {
     try {
         await connectDb();
-        await client.lavalink.init({
-            ...client.user
-        });
         randomQuotes = await Quotes.find({});
         const channel = await client.channels.fetch(wolfyChat);
         const quoteChannel = await client.channels.fetch(quotesChat);
         channel.send("Wolfy is online, i either got rebooted by Simo or i crashed and reborn: All your current requests got deleted, i'm sorry, blame Simo not me");
-        console.log("Wolfy and Lavalink ready");
+        console.log("Wolfy ready");
         await setInterval(async () => {
             try {
                 const chosen = getRandomInt(0, 9);
@@ -345,7 +342,7 @@ client.on('messageCreate', async message => {
         }
     } else if (message.channelId != wolfyChat && message.content.startsWith("!")) {
         message.reply(`Listen, i cant tell if you just put a random esclamation mark (!) at the beginning of the sentence or you invoked one of my fabolous commands, in case you did.... Does this seem Wolfy house to you? WE'RE LITERALLY IN <#${message.channelId}> YOU IDIOT`);
-    }
+    } 
 });
 
 function getRandomInt(min, max) {
