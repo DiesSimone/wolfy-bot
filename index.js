@@ -76,7 +76,7 @@ client.on('messageCreate', async message => {
     };
 
     if (content.includes("morning") || content.includes("gm")) {
-        message.reply(`GOOD MORNING ${process.env.EMOJI1} ${process.env.EMOJI2} ${process.env.EMOJI3} `);
+        message.reply(`GOOD MORNING`);
     }
 
     if (message.channel.id == wolfyChat && content.startsWith("!")) {
@@ -114,8 +114,9 @@ client.on('messageCreate', async message => {
                     }
                 });
                 const text = response.body.choices[0].message.content;
-                console.log(response);
-                console.log(text);
+                console.log("[!CREATE] Full response object:", response);
+                console.log("[!CREATE] Output message location: response.body.choices[0].message.content");
+                console.log("[!CREATE] Output message text:", text);
                 const channel = await client.channels.fetch(wolfyChat);
                 for (let i = 0; i < text.length; i += chunkSize) {
                     if (i === 0) {
@@ -124,42 +125,42 @@ client.on('messageCreate', async message => {
                         await channel.send(text.slice(i, i + chunkSize));
                     }
                     console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                    console.log(`[SENDING MESSAGE] Channel: ${i === 0 ? 'DM reply to user' : 'wolfyChat channel'}, Message chunk:`, text.slice(i, i + chunkSize));
                 }
-                // message.reply(response.body.choices[0].message.content);
             } catch (error) {
-                try {
                     console.log("[!CREATE-FALLBACK-LOG] Entering the fallback");
                     console.error(`[!CREATE-FALLBACK-LOG] error: ${error}`);
-                    const response = await aiClient2.path("/chat/completions").post({
-                        body: {
-                            messages: [
-                                { role: "system", content: createMemory },
-                                { role: "user", content: content }
-                            ],
-                            temperature: 1.0,
-                            top_p: 1.0,
-                            model: model
+                    try {
+                        const response = await aiClient2.path("/chat/completions").post({
+                            body: {
+                                messages: [
+                                    { role: "system", content: createMemory },
+                                    { role: "user", content: content }
+                                ],
+                                temperature: 1.0,
+                                top_p: 1.0,
+                                model: model
+                            }
+                        });
+                        const text = response.body.choices[0].message.content
+                        console.log("[!CREATE-FALLBACK] Full response object:", response);
+                        console.log("[!CREATE-FALLBACK] Output message location: response.body.choices[0].message.content");
+                        console.log("[!CREATE-FALLBACK] Output message text:", text);
+                        const channel = await client.channels.fetch(wolfyChat);
+                        for (let i = 0; i < text.length; i += chunkSize) {
+                            if (i === 0) {
+                                await message.reply(text.slice(i, i + chunkSize));
+                            } else {
+                                await channel.send(text.slice(i, i + chunkSize));
+                            }
+                            console.log(`[SLICING THE RESPONSE]: i = ${i}`);
                         }
-                    });
-                    const text = response.body.choices[0].message.content
-                    console.log(response);
-                    console.log(text);
-                    const channel = await client.channels.fetch(wolfyChat);
-                    for (let i = 0; i < text.length; i += chunkSize) {
-                        if (i === 0) {
-                            await message.reply(text.slice(i, i + chunkSize));
-                        } else {
-                            await channel.send(text.slice(i, i + chunkSize));
-                        }
-                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                    } catch (error) {
+                        console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
+                        const channel = await client.channels.fetch(wolfyChat).catch(() => null);
+                        if (channel) channel.send(`You probably went against the engine policy, pls stop`);
                     }
-                    // message.reply(response.body.choices[0].message.content);
-                } catch (error) {
-                    console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
-                    const channel = await client.channels.fetch(wolfyChat).catch(() => null);
-                    if (channel) channel.send(`You probably went against the engine policy, pls stop`);
                 }
-            }
         }
 
         if (content.includes("!research")) {
@@ -196,8 +197,9 @@ client.on('messageCreate', async message => {
                     }
                 });
                 const text = response.body.choices[0].message.content;
-                console.log(response);
-                console.log(text);
+                console.log("[!RESEARCH] Full response object:", response);
+                console.log("[!RESEARCH] Output message location: response.body.choices[0].message.content");
+                console.log("[!RESEARCH] Output message text:", text);
                 const channel = await client.channels.fetch(wolfyChat);
                 for (let i = 0; i < text.length; i += chunkSize) {
                     if (i === 0) {
@@ -206,42 +208,42 @@ client.on('messageCreate', async message => {
                         await channel.send(text.slice(i, i + chunkSize));
                     }
                     console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                    console.log(`[SENDING MESSAGE] Channel: ${i === 0 ? 'DM reply to user' : 'wolfyChat channel'}, Message chunk:`, text.slice(i, i + chunkSize));
                 }
-                // message.reply(response.body.choices[0].message.content);
             } catch (error) {
-                try {
                     console.log("[!RESEARCH-FALLBACK-LOG] Entering the fallback");
                     console.error(`[!RESEARCH-FALLBACK-LOG] error: ${error}`);
-                    const response = await aiClient2.path("/chat/completions").post({
-                        body: {
-                            messages: [
-                                { role: "system", content: researchMemory },
-                                { role: "user", content: content }
-                            ],
-                            temperature: 1.0,
-                            top_p: 1.0,
-                            model: model
+                    try {
+                        const response = await aiClient2.path("/chat/completions").post({
+                            body: {
+                                messages: [
+                                    { role: "system", content: researchMemory },
+                                    { role: "user", content: content }
+                                ],
+                                temperature: 1.0,
+                                top_p: 1.0,
+                                model: model
+                            }
+                        });
+                        const text = response.body.choices[0].message.content
+                        console.log("[!RESEARCH-FALLBACK] Full response object:", response);
+                        console.log("[!RESEARCH-FALLBACK] Output message location: response.body.choices[0].message.content");
+                        console.log("[!RESEARCH-FALLBACK] Output message text:", text);
+                        const channel = await client.channels.fetch(wolfyChat);
+                        for (let i = 0; i < text.length; i += chunkSize) {
+                            if (i === 0) {
+                                await message.reply(text.slice(i, i + chunkSize));
+                            } else {
+                                await channel.send(text.slice(i, i + chunkSize));
+                            }
+                            console.log(`[SLICING THE RESPONSE]: i = ${i}`);
                         }
-                    });
-                    const text = response.body.choices[0].message.content
-                    console.log(response);
-                    console.log(text);
-                    const channel = await client.channels.fetch(wolfyChat);
-                    for (let i = 0; i < text.length; i += chunkSize) {
-                        if (i === 0) {
-                            await message.reply(text.slice(i, i + chunkSize));
-                        } else {
-                            await channel.send(text.slice(i, i + chunkSize));
-                        }
-                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                    } catch (error) {
+                        console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
+                        const channel = await client.channels.fetch(wolfyChat).catch(() => null);
+                        if (channel) channel.send(`You probably went against the engine policy, pls stop`);
                     }
-                    // message.reply(response.body.choices[0].message.content);
-                } catch (error) {
-                    console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
-                    const channel = await client.channels.fetch(wolfyChat).catch(() => null);
-                    if (channel) channel.send(`You probably went against the engine policy, pls stop`);
                 }
-            }
         }
 
         if (content.includes('!addquote')) {
@@ -293,8 +295,9 @@ client.on('messageCreate', async message => {
                     }
                 });
                 const text = response.body.choices[0].message.content;
-                console.log(response);
-                console.log(text);
+                console.log("[!WOLFY] Full response object:", response);
+                console.log("[!WOLFY] Output message location: response.body.choices[0].message.content");
+                console.log("[!WOLFY] Output message text:", text);
                 const channel = await client.channels.fetch(wolfyChat);
                 for (let i = 0; i < text.length; i += chunkSize) {
                     if (i === 0) {
@@ -303,42 +306,42 @@ client.on('messageCreate', async message => {
                         await channel.send(text.slice(i, i + chunkSize));
                     }
                     console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                    console.log(`[SENDING MESSAGE] Channel: ${i === 0 ? 'DM reply to user' : 'wolfyChat channel'}, Message chunk:`, text.slice(i, i + chunkSize));
                 }
-                // message.reply(response.body.choices[0].message.content);
             } catch (error) {
-                try {
                     console.log("!RESEARCH-[FALLBACK-LOG] Entering the fallback");
                     console.error(`!RESEARCH-[FALLBACK-LOG] error: ${error}`);
-                    const response = await aiClient2.path("/chat/completions").post({
-                        body: {
-                            messages: [
-                                { role: "system", content: mainMemory },
-                                { role: "user", content: content }
-                            ],
-                            temperature: 1.0,
-                            top_p: 1.0,
-                            model: model
+                    try {
+                        const response = await aiClient2.path("/chat/completions").post({
+                            body: {
+                                messages: [
+                                    { role: "system", content: mainMemory },
+                                    { role: "user", content: content }
+                                ],
+                                temperature: 1.0,
+                                top_p: 1.0,
+                                model: model
+                            }
+                        });
+                        const text = response.body.choices[0].message.content
+                        console.log("[!WOLFY-FALLBACK] Full response object:", response);
+                        console.log("[!WOLFY-FALLBACK] Output message location: response.body.choices[0].message.content");
+                        console.log("[!WOLFY-FALLBACK] Output message text:", text);
+                        const channel = await client.channels.fetch(wolfyChat);
+                        for (let i = 0; i < text.length; i += chunkSize) {
+                            if (i === 0) {
+                                await message.reply(text.slice(i, i + chunkSize));
+                            } else {
+                                await channel.send(text.slice(i, i + chunkSize));
+                            }
+                            console.log(`[SLICING THE RESPONSE]: i = ${i}`);
                         }
-                    });
-                    const text = response.body.choices[0].message.content
-                    console.log(response);
-                    console.log(text);
-                    const channel = await client.channels.fetch(wolfyChat);
-                    for (let i = 0; i < text.length; i += chunkSize) {
-                        if (i === 0) {
-                            await message.reply(text.slice(i, i + chunkSize));
-                        } else {
-                            await channel.send(text.slice(i, i + chunkSize));
-                        }
-                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
+                    } catch (error) {
+                        console.error(`[!RESEARCH-FALLBACK-LOG] Fallback error: ${error}`);
+                        const channel = await client.channels.fetch(wolfyChat).catch(() => null);
+                        if (channel) channel.send(`You probably went against the engine policy, pls stop`);
                     }
-                    // message.reply(response.body.choices[0].message.content);
-                } catch (error) {
-                    console.error(`[!RESEARCH-FALLBACK-LOG] Fallback error: ${error}`);
-                    const channel = await client.channels.fetch(wolfyChat).catch(() => null);
-                    if (channel) channel.send(`You probably went against the engine policy, pls stop`);
                 }
-            }
         }
     } else if (message.channelId != wolfyChat && message.content.startsWith("!")) {
         message.reply(`Listen, i cant tell if you just put a random esclamation mark (!) at the beginning of the sentence or you invoked one of my fabolous commands, in case you did.... Does this seem Wolfy house to you? WE'RE LITERALLY IN <#${message.channelId}> YOU IDIOT`);
