@@ -5,6 +5,7 @@ const Summaries = require('./models/summaries.js');
 const Summarizer = require('./modules/summarizer.js');
 const { registerSlashCommands } = require('./modules/slash-commands.js');
 const { buildPrompt } = require('./modules/prompts.js');
+const { startMorningScheduler } = require('./modules/morning.js');
 const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const ModelClient = require("@azure-rest/ai-inference").default;
 const { AzureKeyCredential } = require("@azure/core-auth");
@@ -64,6 +65,14 @@ client.on("ready", async () => {
         const guildId = process.env.GUILD_ID;
         if (guildId) await registerSlashCommands(client, guildId);
         else console.log('[SLASH-COMMANDS] No GUILD_ID in env, skipping registration');
+
+        // ========================================================================
+        // MORNING MESSAGE SCHEDULER
+        // ========================================================================
+        // Initialize morning message scheduler if MORNING_CHANNEL_ID is set
+        // Sends AI-generated motivational message at configured UTC time (default 4AM)
+        // ========================================================================
+        startMorningScheduler(client, aiClient, aiClient2, model);
 
         await setInterval(async () => {
             try {
