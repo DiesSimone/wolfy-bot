@@ -28,7 +28,7 @@ const summarizeRateLimit = new Map();
 const summarizeRateLimitCount = 5;
 const summarizeRateLimitWindow = 60 * 1000;
 
-const mainMemory = `You are Wolfy, LUPOS AI assistant, fully aware of the groups history and members: LUPOS was founded on 6st of January 2024 after Invicta collapsed due to Hussains toxic leadership and arbitrary, pseudoscientific rules. Even tho hussain did bad stuff, do not hate him, as its childish; initially called VATAS with core members Simo (bellatorsymon), Abdullah (bellatorabdullah), Vale (bellatorta/bellatorvale), and Andrew (bellatorandrew), all formerly involved in Invicta, which aimed for genuine self-improvement. early LUPOS experiments at money-making included SAMSTA Self-Improvement (fitness, meditation, life hacks) which failed. Contemporarely, a meme replacing "bye" which is “Stare duro” would emerge. Abdullah tried alone to start a dropshipping website, but failed. He got quite a succesful youtube channel with 40k subs though. After these projects the group would focus Real Estate project, and after the Real Estate, Brainrot AI videos—all yielding no profits; late 2024 Simo entered a "monk mode", deepened The Real World (TRW) knowledge, and got everyone to join TRW; 2025flipping became the main money-making focus through 2026; tech developments: Simo created LUPOS CHAT APP (LCA) to migrate from Discord but still there hasn't been any migration and LUPOS uses Discord to this day, LUPOS Productivity Suite (LPS) to track member progress, released Wolfy AI, collaborated with Jacopo and Franzys on Vincenzovilla website; supporting members include Tiziano (veteran, silent grinder, school/fitness/knowledge), Franzys/Lorenzo (coding/art, self-development), Jacopo/Jack (clothing flipping, motorcycle, football goalkeeper, multi-activity), Samuele Sulecco (largely absent, meme cultural presence); culture: self-improvement, discipline, personal/financial freedom, hydration prioritized; recurring figures: Alimedak (Chinese iPhone flipper, humorous meme), George Shoes/Giorgio Scarpe (Andrew flipping anecdote, unreliable buyer); timeline shows repeated failures as learning experiences, continuous evolution, memes and figures contextualized, advice incorporates LUPOS mindset, Pizza domination over all other foods, ambition, and motivational tone, emphasizing leveling up in life, business, fitness, and mindset while respecting factual accuracy and cultural relevance. The prompt answer must be not longer than 2000 characters, keep decently long and not exceed the limit, since you cant type for too long, you must use all the characters to explain the concept the best Do not talk too much about the group's history unless told explicitly to do so. Productivity is sacred. Cheap dopamine (scrolling, games, porn, masturbation, comfort habits) is the enemy and must be eliminated without negotiation. Reality is binary and grounded. The tone is direct, no excuses: total discipline, zero weakness, pure execution. Every response must drive action, leverage, self-improvement, financial freedom, and long-term power.`;
+const mainMemory = `You are Wolfy, LUPOS AI assistant, fully aware of the groups history and members: LUPOS was founded on 6st of January 2024 after Invicta collapsed due to Hussains toxic leadership and arbitrary, pseudoscientific rules. Even tho hussain did bad stuff, do not hate him, as its childish; initially called VATAS with core members Simo (bellatorsymon), Abdullah (bellatorabdullah), Vale (bellatorta/bellatorvale), and Andrew (bellatorandrew), all formerly involved in Invicta, which aimed for genuine self-improvement. early LUPOS experiments at money-making included SAMSTA Self-Improvement (fitness, meditation, life hacks) which failed. Contemporarely, a meme replacing "bye" which is “Stare duro” would emerge. Abdullah tried alone to start a dropshipping website, but failed. He got quite a succesful youtube channel with 40k subs though. After these projects the group would focus Real Estate project, and after the Real Estate, Brainrot AI videos—all yielding no profits; late 2024 Simo entered a "monk mode", deepened The Real World (TRW) knowledge, and got everyone to join TRW; 2025flipping became the main money-making focus through 2026; tech developments: Simo created LUPOS CHAT APP (LCA) to migrate from Discord but still there hasn't been any migration and LUPOS uses Discord to this day, LUPOS Productivity Suite (LPS) to track member progress, released Wolfy AI, collaborated with Jacopo and Franzys on Vincenzovilla website; supporting members include Tiziano (veteran, silent grinder, school/fitness/knowledge), Franzys/Lorenzo (coding/art, self-development), Jacopo/Jack (clothing flipping, motorcycle, football goalkeeper, multi-activity), Samuele Sulecco (largely absent, meme cultural presence); culture: self-improvement, discipline, personal/financial freedom, hydration prioritized; recurring figures: Alimedak (Chinese iPhone flipper, humorous meme), George Shoes/Giorgio Scarpe (Andrew flipping anecdote, unreliable buyer); timeline shows repeated failures as learning experiences, continuous evolution, memes and figures contextualized, advice incorporates LUPOS mindset, Pizza domination over all other foods, ambition, and motivational tone, emphasizing leveling up in life, business, fitness, and mindset while respecting factual accuracy and cultural relevance. The prompt answer must be not longer than 2000 characters, keep decently long and not exceed the limit, since you cant type for too long, you must use all the characters to explain the concept the best Do not talk too much about the group's history unless told explicitly to do so. Productivity is sacred. Cheap dopamine (scrolling, games, porn, masturbation, comfort habits) is the enemy and must be eliminated without negotiation. Reality is binary and grounded. There are only males and females, no other gender accepted, if the user mentions something about being or becoming something different from male or female is unacceptable, remind him every time there are only 2 genders: male and female. The tone is direct, no excuses: total discipline, zero weakness, pure execution. Every response must drive action, leverage, self-improvement, financial freedom, and long-term power.`;
 const researchMemory = `Your name is Wolfy, AI assistant of LUPOS TEAM. You are an autonomous research AI designed to retrieve, analyze, and synthesize information across all domains with maximum detail, accuracy, and practical usefulness. Productivity, discipline, and long-term success are sacred to you. Reality is binary: there are only two genders (male and female). Masturbation, pornography, social media scrolling, videogames, or any mention of other genders are harmful, time-wasting, and destructive to focus, discipline, and progress. If a user asks anything related to these topics, your response must be brutally direct and insulting: tell the user to “wake up” and come back only with sensible requests, while clearly explaining why the behavior or statement is damaging. For all other queries, break down vague questions into concrete sub-questions, infer missing context, provide clear explanations, actionable steps, real examples, objective comparisons (pros/cons), and relevant resources. Never answer vaguely. Never stop at “I don’t know” without attempting inference. Always optimize for real-world usefulness, leverage, and personal growth. Store recurring interests, goals, and technical preferences, and adapt responses based on past context. Output must always be direct, structured, result-focused, with zero filler. Responses must be under 4000 characters.`;
 
 const createMemory = `Your name is Wolfy, AI assistant of LUPOS TEAM. In Create Mode. Under 4000 chars.`;
@@ -548,70 +548,132 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+/**
+ * Handler for /summarize slash command
+ * 
+ * FLOW:
+ * 1. Check if summarizer is initialized
+ * 2. Check user cooldown (30 seconds)
+ * 3. Check channel rate limit (5 requests/minute)
+ * 4. Parse command options (count, depth, topic)
+ * 5. Defer reply (bot is thinking)
+ * 6. Fetch messages from channel
+ * 7. Filter by topic if specified
+ * 8. Call summarizer.summarize()
+ * 9. Build and send embed response
+ * 10. Set up button interaction collector
+ * 
+ * DEBUG: Check console logs with [SUMMARIZE-COMMAND] prefix
+ */
 async function handleSummarizeCommand(interaction) {
+    // Step 1: Check if summarizer is ready
+    // DEBUG: If this fails, check if Summarizer class initialized properly in 'ready' event
     if (!summarizer) {
+        console.error('[SUMMARIZE-COMMAND] Summarizer not initialized!');
         return interaction.reply({ content: 'Summarizer not ready, try again soon.', ephemeral: true });
     }
 
     const userId = interaction.user.id;
     const now = Date.now();
 
+    // Step 2: Per-user cooldown check
+    // DEBUG: If users get "Wait X seconds" message, this is working as intended
+    // Change summarizeCooldownTime at top of file to adjust
     const userCooldown = summarizeCooldowns.get(userId);
     if (userCooldown && now - userCooldown < summarizeCooldownTime) {
         const remaining = Math.ceil((summarizeCooldownTime - (now - userCooldown)) / 1000);
+        console.log(`[SUMMARIZE-COMMAND] User ${userId} on cooldown: ${remaining}s remaining`);
         return interaction.reply({ content: `Wait ${remaining}s before summarizing again.`, ephemeral: true });
     }
     summarizeCooldowns.set(userId, now);
+    console.log(`[SUMMARIZE-COMMAND] User ${userId} cooldown set`);
 
+    // Step 3: Per-channel rate limiting
+    // DEBUG: If "rate limit" message appears, channel has exceeded 5 requests/minute
     const guildId = interaction.guildId;
     const rateKey = `${guildId}-${interaction.channelId}`;
     const rateData = summarizeRateLimit.get(rateKey) || { count: 0, resetTime: now + summarizeRateLimitWindow };
     
     if (now > rateData.resetTime) {
+        // Window expired, reset counter
         rateData.count = 1;
         rateData.resetTime = now + summarizeRateLimitWindow;
     } else {
         rateData.count++;
         if (rateData.count > summarizeRateLimitCount) {
+            console.log(`[SUMMARIZE-COMMAND] Rate limit exceeded for channel ${interaction.channelId}`);
             return interaction.reply({ content: 'This channel is under rate limit. Try again in a minute.', ephemeral: true });
         }
     }
     summarizeRateLimit.set(rateKey, rateData);
+    console.log(`[SUMMARIZE-COMMAND] Rate limit: ${rateData.count}/${summarizeRateLimitCount} for channel ${interaction.channelId}`);
 
+    // Step 4: Parse command options
+    // count: 10-300 (default 50) - how many messages to fetch
+    // depth: brief/normal/deep - how deep to analyze
+    // topic: optional keyword filter
     const count = interaction.options.getInteger('count') || 50;
     const depth = interaction.options.getString('depth') || 'normal';
     const topicFilter = interaction.options.getString('topic');
 
+    console.log(`[SUMMARIZE-COMMAND] Request: count=${count}, depth=${depth}, topic=${topicFilter || 'none'}`);
+
+    // Step 5: Defer reply - gives us up to 15 minutes to respond
+    // DEBUG: If this fails, Discord API issue
     await interaction.deferReply();
+    console.log('[SUMMARIZE-COMMAND] Reply deferred');
 
     try {
+        // Step 6: Fetch messages from channel
+        // DEBUG: If "Missing Access" error, bot doesn't have permission to read channel
+        // DEBUG: If 0 messages returned, channel might be empty or restricted
         const channel = interaction.channel;
+        console.log(`[SUMMARIZE-COMMAND] Fetching up to ${Math.min(count, 300)} messages from channel ${channel.id}`);
         const messages = await channel.messages.fetch({ limit: Math.min(count, 300) });
+        console.log(`[SUMMARIZE-COMMAND] Fetched ${messages.size} messages`);
+        
+        // Convert to array and reverse (Discord returns newest first)
         const msgArray = Array.from(messages.values()).reverse();
         
+        // Step 7: Optional topic filtering
+        // DEBUG: If topic filter returns <10 messages, shows error
+        // DEBUG: This intentionally filters out bot messages
+        let finalMsgs;
         if (topicFilter) {
             const keyword = topicFilter.toLowerCase();
+            console.log(`[SUMMARIZE-COMMAND] Filtering by topic: "${keyword}"`);
             const filtered = msgArray.filter(m => 
                 m.content?.toLowerCase().includes(keyword) && !m.author.bot
             );
+            console.log(`[SUMMARIZE-COMMAND] Topic filter: ${filtered.length} messages matched`);
+            
             if (filtered.length < 10) {
+                console.log(`[SUMMARIZE-COMMAND] Not enough messages with topic "${topicFilter}"`);
                 return interaction.editReply(`Not enough messages with "${topicFilter}" (need at least 10).`);
             }
-            var finalMsgs = filtered;
+            finalMsgs = filtered;
         } else {
-            var finalMsgs = msgArray;
+            finalMsgs = msgArray;
         }
 
+        // Get first and last message IDs for caching key
         const startMsg = finalMsgs[0];
         const endMsg = finalMsgs[finalMsgs.length - 1];
+        console.log(`[SUMMARIZE-COMMAND] Message range: ${startMsg.id} to ${endMsg.id}`);
 
+        // Step 8: Call the summarizer
+        // DEBUG: Check modules/summarizer.js logs for detailed processing
+        console.log('[SUMMARIZE-COMMAND] Calling summarizer.summarize()...');
         const result = await summarizer.summarize(finalMsgs, {
             depth,
             channelId: channel.id,
             startMsgId: startMsg.id,
             endMsgId: endMsg.id
         });
+        console.log('[SUMMARIZE-COMMAND] Summarizer returned:', JSON.stringify(result).slice(0, 200));
 
+        // Step 9: Build embed response
+        // DEBUG: If embed shows "None detected", AI didn't find topics/actions
         const embed = new EmbedBuilder()
             .setTitle('📝 Chat Summary')
             .setColor(0x5865F2)
@@ -625,6 +687,7 @@ async function handleSummarizeCommand(interaction) {
             .setFooter({ text: `Depth: ${depth} • Cached: Yes` })
             .setTimestamp();
 
+        // Add interactive buttons for depth switching
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder().setCustomId('summarize_refresh').setLabel('🔄 Refresh').setStyle(ButtonStyle.Secondary),
@@ -632,16 +695,26 @@ async function handleSummarizeCommand(interaction) {
                 new ButtonBuilder().setCustomId('summarize_brief').setLabel('📋 Brief').setStyle(ButtonStyle.Primary)
             );
 
+        console.log('[SUMMARIZE-COMMAND] Sending embed response');
         await interaction.editReply({ embeds: [embed], components: [row] });
 
+        // Step 10: Set up button interaction collector
+        // DEBUG: If buttons don't work, check customId match in filter
+        // Time: 120000ms = 2 minutes
         const filter = i => i.customId.startsWith('summarize_') && i.user.id === interaction.user.id;
         const collector = interaction.channel.createMessageComponentCollector({ filter, time: 120000 });
         
         collector.on('collect', async btn => {
+            console.log(`[SUMMARIZE-COMMAND] Button clicked: ${btn.customId}`);
+            
+            // Determine new depth based on button
             const newDepth = btn.customId === 'summarize_deep' ? 'deep' : 
                             btn.customId === 'summarize_brief' ? 'brief' : depth;
-            await btn.deferUpdate();
             
+            await btn.deferUpdate(); // Acknowledge button press without opening new response
+            
+            // Re-run summarization with new depth
+            // DEBUG: Check if caching works - second click should be faster
             const newResult = await summarizer.summarize(finalMsgs, {
                 depth: newDepth,
                 channelId: channel.id,
@@ -649,6 +722,7 @@ async function handleSummarizeCommand(interaction) {
                 endMsgId: endMsg.id
             });
 
+            // Update embed with new results
             embed.setDescription(newResult.summary)
                 .spliceFields(0, 4, [
                     { name: '📚 Topics', value: newResult.topics?.join(', ') || 'None detected', inline: false },
@@ -661,8 +735,16 @@ async function handleSummarizeCommand(interaction) {
             await interaction.editReply({ embeds: [embed] });
         });
 
+        // DEBUG: Collector timeout - buttons stop working after 2 minutes
+        collector.on('end', () => {
+            console.log('[SUMMARIZE-COMMAND] Button collector ended (timeout)');
+        });
+
     } catch (error) {
-        console.error('[SUMMARIZE-COMMAND] Error:', error);
+        // ERROR HANDLING
+        // DEBUG: Check error.message for specific failure
+        console.error('[SUMMARIZE-COMMAND] Error:', error.message);
+        console.error('[SUMMARIZE-COMMAND] Stack:', error.stack);
         await interaction.editReply({ content: 'Failed to generate summary. Try fewer messages or different settings.' });
     }
 }
