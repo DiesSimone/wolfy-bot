@@ -6,6 +6,7 @@ const Summarizer = require('./modules/summarizer.js');
 const { registerSlashCommands } = require('./modules/slash-commands.js');
 const { buildPrompt } = require('./modules/prompts.js');
 const { startMorningScheduler } = require('./modules/morning.js');
+const { performWebResearch, isConfigured: isWebResearchConfigured } = require('./modules/webresearch.js');
 const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const ModelClient = require("@azure-rest/ai-inference").default;
 const { AzureKeyCredential } = require("@azure/core-auth");
@@ -212,11 +213,34 @@ client.on('messageCreate', async message => {
                 console.log(`[!RESEARCH-LOG] detected ai prompt call: ${userText}`);
 
                 if (!userText) return message.reply("Say something for Wolfy!");
-                message.reply("Thinking my answer...");
                 
-                const systemPrompt = buildPrompt(content, 'research');
+                // ========================================================================
+                // WEB RESEARCH INTEGRATION
+                // ========================================================================
+                // Check if query needs web search (smart detection)
+                // If web search is configured and triggered, use Exa AI
+                // Otherwise fall back to static AI knowledge
+                // ========================================================================
                 
-                const response = await aiClient.path("/chat/completions").post({
+                let useWebSearch = false;
+                let webResult = null;
+                
+                if (isWebResearchConfigured()) {
+                    message.reply("🔍 Searching the web...");
+                    webResult = await performWebResearch(userText, aiClient, aiClient2, model);
+                    useWebSearch = webResult.needsWebSearch && webResult.answer;
+                    
+                    if (useWebSearch) {
+                        console.log('[!RESEARCH] Using web search results');
+                    }
+                }
+                
+                if (!useWebSearch) {
+                    // Fall back to static AI (original behavior)
+                    message.reply("Real time web search failed, proceeding with classic research...");
+                    const systemPrompt = buildPrompt(content, 'research');
+                    
+                    const response = await aiClient.path("/chat/completions").post({
                     body: {
                         messages: [
                             { role: "system", content: systemPrompt },
@@ -240,6 +264,23 @@ client.on('messageCreate', async message => {
                     }
                     console.log(`[SLICING THE RESPONSE]: i = ${i}`);
                     console.log(`[SENDING MESSAGE] Channel: ${i === 0 ? 'DM reply to user' : 'wolfyChat channel'}, Message chunk:`, text.slice(i, i + chunkSize));
+                }
+                } else {
+                    // Web search result - send as embed
+                    console.log('[!RESEARCH] Sending web research results');
+                    
+                    const embed = new EmbedBuilder()
+                        .setTitle(`🔍 Research: ${userText}`)
+                        .setColor(0x5865F2)
+                        .setDescription(webResult.answer)
+                        .addFields(
+                            { name: '📚 Sources', value: webResult.sources || 'No sources', inline: false }
+                        )
+                        .setFooter({ text: 'Powered by Exa AI • Real-time search' })
+                        .setTimestamp();
+                    
+                    const channel = await client.channels.fetch(wolfyChat);
+                    await channel.send({ embeds: [embed] });
                 }
             } catch (error) {
                     console.log("[!RESEARCH-FALLBACK-LOG] Entering the fallback");

@@ -24,6 +24,7 @@
     "discord.js": "^14.25.1",
     "distube": "^5.2.3",
     "dotenv": "^17.2.3",
+    "exa-js": "^2.12.1",
     "lavalink-client": "^2.8.0",
     "mongoose": "^9.2.1",
     "node-fetch": "^3.3.2",
