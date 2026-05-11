@@ -32,7 +32,7 @@ if (EXA_API_KEY) {
 // Smart detection keywords - triggers web search when present
 const WEB_SEARCH_TRIGGERS = {
     temporal: ['latest', 'recent', 'new', '2024', '2025', '2026', 'current'],
-    factual: ['what is', 'who is', 'who was', 'how does', 'best', 'top', 'ranked', 'compare'],
+    factual: ['what is', 'who is', 'who was', 'how does', 'how is', 'best', 'top', 'ranked', 'compare', 'weather', 'temperature', 'forecast'],
     comparison: ['vs', 'versus', 'compare', 'difference', 'between', 'or'],
     action: ['how to', 'ways to', 'steps to', 'guide', 'tutorial', 'learn', 'start']
 };

@@ -217,25 +217,44 @@ client.on('messageCreate', async message => {
                 // ========================================================================
                 // WEB RESEARCH INTEGRATION
                 // ========================================================================
-                // Check if query needs web search (smart detection)
-                // If web search is configured and triggered, use Exa AI
-                // Otherwise fall back to static AI knowledge
+                // ALWAYS try Exa AI web research first for every !research command
+                // Only fall back to legacy AI if Exa fails (error or no response)
+                // No keyword detection - always try web search first
                 // ========================================================================
                 
-                let useWebSearch = false;
+                let webSearchFailed = false;
                 let webResult = null;
                 
+                // Always attempt web research if EXA_API_KEY is configured
                 if (isWebResearchConfigured()) {
-                    message.reply("🔍 Searching the web...");
-                    webResult = await performWebResearch(userText, aiClient, aiClient2, model);
-                    useWebSearch = webResult.needsWebSearch && webResult.answer;
-                    
-                    if (useWebSearch) {
-                        console.log('[!RESEARCH] Using web search results');
+                    try {
+                        console.log('[!RESEARCH] Attempting Exa AI web research...');
+                        message.reply("🔍 Searching the web...");
+                        
+                        // This will throw if Exa fails, causing us to fall back
+                        webResult = await performWebResearch(userText, aiClient, aiClient2, model);
+                        
+                        // Check if we got a valid response
+                        if (webResult && webResult.needsWebSearch && webResult.answer) {
+                            console.log('[!RESEARCH] Exa AI succeeded, using web results');
+                        } else {
+                            // Exa returned but no valid answer - treat as failure
+                            console.log('[!RESEARCH] Exa returned empty result, falling back to legacy');
+                            webSearchFailed = true;
+                        }
+                    } catch (error) {
+                        // Exa API failed - fall back to legacy
+                        console.error('[!RESEARCH] Exa AI failed:', error.message);
+                        webSearchFailed = true;
                     }
+                } else {
+                    // EXA_API_KEY not configured
+                    console.log('[!RESEARCH] EXA not configured, using legacy research');
+                    webSearchFailed = true;
                 }
                 
-                if (!useWebSearch) {
+                // Fall back to legacy AI if web search failed (or wasn't configured)
+                if (webSearchFailed || !webResult || !webResult.answer) {
                     // Fall back to static AI (original behavior)
                     message.reply("Real time web search failed, proceeding with classic research...");
                     const systemPrompt = buildPrompt(content, 'research');
@@ -592,14 +611,20 @@ async function handleSummarizeCommand(interaction) {
     console.log(`[SUMMARIZE-COMMAND] Rate limit: ${rateData.count}/${summarizeRateLimitCount} for channel ${interaction.channelId}`);
 
     // Step 4: Parse command options
-    // count: 10-300 (default 50) - how many messages to fetch
-    // depth: brief/normal/deep - how deep to analyze
-    // topic: optional keyword filter
+    // count: 10-100 (default 50) - Discord API limits fetching to 100 max
+    // depth: REMOVED from options - now hardcoded to 'normal' internally
+    // topic: REMOVED - topic filtering feature was removed
+    // NOTE: Discord only allows fetching up to 100 messages per request
     const count = interaction.options.getInteger('count') || 50;
-    const depth = interaction.options.getString('depth') || 'normal';
-    const topicFilter = interaction.options.getString('topic');
+    
+    // Depth is now always 'normal' - the depth option was removed from slash command
+    // Buttons still allow switching between brief/normal/deep for variety
+    const depth = 'normal'; 
+    
+    // Topic filter removed - no longer a command option
+    const topicFilter = null;
 
-    console.log(`[SUMMARIZE-COMMAND] Request: count=${count}, depth=${depth}, topic=${topicFilter || 'none'}`);
+    console.log(`[SUMMARIZE-COMMAND] Request: count=${count}, depth=${depth}, topic=none (removed)`);
 
     // Step 5: Defer reply - gives us up to 15 minutes to respond
     // DEBUG: If this fails, Discord API issue
@@ -611,33 +636,18 @@ async function handleSummarizeCommand(interaction) {
         // DEBUG: If "Missing Access" error, bot doesn't have permission to read channel
         // DEBUG: If 0 messages returned, channel might be empty or restricted
         const channel = interaction.channel;
-        console.log(`[SUMMARIZE-COMMAND] Fetching up to ${Math.min(count, 300)} messages from channel ${channel.id}`);
-        const messages = await channel.messages.fetch({ limit: Math.min(count, 300) });
+        // Discord API caps at 100 messages per fetch - enforce this limit
+        const fetchLimit = Math.min(count, 100);
+        console.log(`[SUMMARIZE-COMMAND] Fetching up to ${fetchLimit} messages from channel ${channel.id}`);
+        const messages = await channel.messages.fetch({ limit: fetchLimit });
         console.log(`[SUMMARIZE-COMMAND] Fetched ${messages.size} messages`);
         
         // Convert to array and reverse (Discord returns newest first)
         const msgArray = Array.from(messages.values()).reverse();
         
-        // Step 7: Optional topic filtering
-        // DEBUG: If topic filter returns <10 messages, shows error
-        // DEBUG: This intentionally filters out bot messages
-        let finalMsgs;
-        if (topicFilter) {
-            const keyword = topicFilter.toLowerCase();
-            console.log(`[SUMMARIZE-COMMAND] Filtering by topic: "${keyword}"`);
-            const filtered = msgArray.filter(m => 
-                m.content?.toLowerCase().includes(keyword) && !m.author.bot
-            );
-            console.log(`[SUMMARIZE-COMMAND] Topic filter: ${filtered.length} messages matched`);
-            
-            if (filtered.length < 10) {
-                console.log(`[SUMMARIZE-COMMAND] Not enough messages with topic "${topicFilter}"`);
-                return interaction.editReply(`Not enough messages with "${topicFilter}" (need at least 10).`);
-            }
-            finalMsgs = filtered;
-        } else {
-            finalMsgs = msgArray;
-        }
+        // Step 7: Topic filtering was REMOVED - now all messages are used
+        // (topicFilter is always null now)
+        const finalMsgs = msgArray;
 
         // Get first and last message IDs for caching key
         const startMsg = finalMsgs[0];
@@ -670,58 +680,15 @@ async function handleSummarizeCommand(interaction) {
             .setFooter({ text: `Depth: ${depth} • Cached: Yes` })
             .setTimestamp();
 
-        // Add interactive buttons for depth switching
-        const row = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder().setCustomId('summarize_refresh').setLabel('🔄 Refresh').setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder().setCustomId('summarize_deep').setLabel('📊 Deep').setStyle(ButtonStyle.Primary),
-                new ButtonBuilder().setCustomId('summarize_brief').setLabel('📋 Brief').setStyle(ButtonStyle.Primary)
-            );
-
-        console.log('[SUMMARIZE-COMMAND] Sending embed response');
-        await interaction.editReply({ embeds: [embed], components: [row] });
-
-        // Step 10: Set up button interaction collector
-        // DEBUG: If buttons don't work, check customId match in filter
-        // Time: 120000ms = 2 minutes
-        const filter = i => i.customId.startsWith('summarize_') && i.user.id === interaction.user.id;
-        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 120000 });
+        // ========================================================================
+        // BUTTONS REMOVED - Simpler output without interactive buttons
+        // The command now just sends the summary and that's it
+        // No more Refresh/Deep/Brief buttons
+        // ========================================================================
         
-        collector.on('collect', async btn => {
-            console.log(`[SUMMARIZE-COMMAND] Button clicked: ${btn.customId}`);
-            
-            // Determine new depth based on button
-            const newDepth = btn.customId === 'summarize_deep' ? 'deep' : 
-                            btn.customId === 'summarize_brief' ? 'brief' : depth;
-            
-            await btn.deferUpdate(); // Acknowledge button press without opening new response
-            
-            // Re-run summarization with new depth
-            // DEBUG: Check if caching works - second click should be faster
-            const newResult = await summarizer.summarize(finalMsgs, {
-                depth: newDepth,
-                channelId: channel.id,
-                startMsgId: startMsg.id,
-                endMsgId: endMsg.id
-            });
-
-            // Update embed with new results
-            embed.setDescription(newResult.summary)
-                .spliceFields(0, 4, [
-                    { name: '📚 Topics', value: newResult.topics?.join(', ') || 'None detected', inline: false },
-                    { name: '✅ Action Items', value: newResult.actionItems?.join('\n') || 'None detected', inline: false },
-                    { name: '💭 Sentiment', value: newResult.sentiment?.toUpperCase() || 'NEUTRAL', inline: true },
-                    { name: '💬 Messages Analyzed', value: newResult.messageCount?.toString() || finalMsgs.length.toString(), inline: true }
-                ])
-                .setFooter({ text: `Depth: ${newDepth} • Cached: Yes` });
-
-            await interaction.editReply({ embeds: [embed] });
-        });
-
-        // DEBUG: Collector timeout - buttons stop working after 2 minutes
-        collector.on('end', () => {
-            console.log('[SUMMARIZE-COMMAND] Button collector ended (timeout)');
-        });
+        console.log('[SUMMARIZE-COMMAND] Sending embed response (no buttons)');
+        // Send embed WITHOUT components (no buttons)
+        await interaction.editReply({ embeds: [embed] });
 
     } catch (error) {
         // ERROR HANDLING

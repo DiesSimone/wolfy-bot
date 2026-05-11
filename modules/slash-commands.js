@@ -5,8 +5,8 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
  * 
  * Options:
  * - count: Number of messages to fetch (10-300, default 50)
- * - depth: Analysis depth (brief=fast/shallow, normal=balanced, deep=thorough)
- * - topic: Optional keyword to filter messages (only summarize msgs containing this)
+ *   REMOVED: 'depth' option - now uses default 'normal' depth internally
+ *   REMOVED: 'topic' option - topic filtering feature removed
  * 
  * Permissions: User needs ReadMessageHistory to use this command
  * This automatically respects Discord channel permissions!
@@ -14,25 +14,27 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const summarizeCommand = new SlashCommandBuilder()
     .setName('summarize')
     .setDescription('Summarize recent messages in this channel')
+    
+    // ========================================================================
+    // COUNT OPTION - Only remaining parameter
+    // ========================================================================
+    // - Min: 10 messages
+    // - Max: 100 messages (Discord API limit - can't fetch more than 100 at once)
+    // - Default: 50 messages
+    // ========================================================================
     .addIntegerOption(option =>
         option.setName('count')
-            .setDescription('Number of messages to analyze (default: 50)')
+            .setDescription('Number of messages to analyze (10-100, default: 50)')
             .setMinValue(10)
-            .setMaxValue(300)
+            .setMaxValue(100)
     )
-    .addStringOption(option =>
-        option.setName('depth')
-            .setDescription('Analysis depth')
-            .addChoices(
-                { name: 'Brief (fast, 50 msgs)', value: 'brief' },
-                { name: 'Normal (balanced, 150 msgs)', value: 'normal' },
-                { name: 'Deep (thorough, 300 msgs)', value: 'deep' }
-            )
-    )
-    .addStringOption(option =>
-        option.setName('topic')
-        .setDescription('Filter specific topic keywords (only analyze matching messages)')
-    )
+    
+    // REMOVED: Depth option was removed - the bot now uses 'normal' depth internally
+    // This simplifies the command - no more depth selection required
+    
+    // REMOVED: Topic filter option was removed
+    // This feature was seldom used and added complexity
+    
     // This ensures only users who can read messages can use the command
     // Privacy: If user can't see messages, they can't summarize them!
     .setDefaultMemberPermissions(PermissionFlagsBits.ReadMessageHistory);

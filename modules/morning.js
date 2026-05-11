@@ -196,7 +196,7 @@ function startMorningScheduler(client, aiClient, aiClient2, model) {
             console.log("[MORNING] Checked time, its not time yet..." + utcHour + ":" + utcMinute)
         }
 
-    }, 30000); // Check every 30 seconds
+    }, 50000); // Check every 50 seconds
     
     console.log('[MORNING] ✅ Morning scheduler initialized');
 }
