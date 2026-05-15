@@ -29,61 +29,6 @@ if (EXA_API_KEY) {
     console.warn('[WEBRESEARCH] EXA_API_KEY not set - web search disabled');
 }
 
-// Smart detection keywords - triggers web search when present
-const WEB_SEARCH_TRIGGERS = {
-    temporal: ['latest', 'recent', 'new', '2024', '2025', '2026', 'current'],
-    factual: ['what is', 'who is', 'who was', 'how does', 'how is', 'best', 'top', 'ranked', 'compare', 'weather', 'temperature', 'forecast'],
-    comparison: ['vs', 'versus', 'compare', 'difference', 'between', 'or'],
-    action: ['how to', 'ways to', 'steps to', 'guide', 'tutorial', 'learn', 'start']
-};
-
-/**
- * =============================================================================
- * FUNCTION: shouldUseWebSearch()
- * =============================================================================
- * PURPOSE: Detect if query needs real-time web information
- * 
- * Returns true if query contains trigger keywords, making web search valuable.
- * Otherwise returns false - use static AI knowledge.
- * 
- * @param {string} query - User's research query
- * @returns {boolean} - True if should use web search
- * =============================================================================
- */
-function shouldUseWebSearch(query) {
-    if (!EXA_API_KEY) {
-        console.log('[WEBRESEARCH] No API key - skipping web search');
-        return false;
-    }
-    
-    const lowerQuery = query.toLowerCase();
-    
-    // Check all trigger categories
-    for (const category of Object.values(WEB_SEARCH_TRIGGERS)) {
-        for (const keyword of category) {
-            if (lowerQuery.includes(keyword)) {
-                console.log(`[WEBRESEARCH] Web search triggered by: ${keyword}`);
-                return true;
-            }
-        }
-    }
-    
-    // Also trigger on specific question patterns
-    if (lowerQuery.startsWith('what ') || 
-        lowerQuery.startsWith('how ') || 
-        lowerQuery.startsWith('why ') ||
-        lowerQuery.startsWith('when ') ||
-        lowerQuery.startsWith('where ') ||
-        lowerQuery.startsWith('who ')) {
-        // Questions often benefit from web search
-        console.log('[WEBRESEARCH] Question detected - using web search');
-        return true;
-    }
-    
-    console.log('[WEBRESEARCH] No web search triggers found - using static AI');
-    return false;
-}
-
 /**
  * =============================================================================
  * FUNCTION: searchWeb()
@@ -293,18 +238,13 @@ function formatSourcesList(searchResults) {
  * =============================================================================
  */
 async function performWebResearch(query, aiClient, aiClient2, model) {
-    // Check if we should use web search
-    const shouldSearch = shouldUseWebSearch(query);
+    // ========================================================================
+    // REMOVED keyword detection - always perform web search when called
+    // The index.js handles when to call this function
+    // If Exa fails, index.js will fall back to legacy AI
+    // ========================================================================
     
-    if (!shouldSearch) {
-        return {
-            needsWebSearch: false,
-            answer: null,
-            sources: null
-        };
-    }
-    
-    console.log(`[WEBRESEARCH] Performing web research for: "${query}"`);
+    console.log(`[WEBRESEARCH] Performing web research for: "${query}" (no keyword check - always search)`);
     
     try {
         // Step 1: Search the web
@@ -365,7 +305,6 @@ function isConfigured() {
 
 module.exports = {
     performWebResearch,
-    shouldUseWebSearch,
     searchWeb,
     fetchContentFromUrls,
     synthesizeWithAI,
