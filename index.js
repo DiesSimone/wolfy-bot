@@ -103,433 +103,6 @@ client.on('messageCreate', async message => {
     if (content.includes("morning") || content.includes("gm")) {
         message.reply(`GOOD MORNING`);
     }
-
-    if (message.channel.id == wolfyChat && content.startsWith("!")) {
-        if (content.includes("!create")) {
-            const now = Date.now();
-            const userId = message.author.id;
-
-            if (cooldowns.has(userId)) {
-                const expirationTime = cooldowns.get(userId) + cooldownTime;
-                if (now < expirationTime) {
-                    const remaining = Math.ceil((expirationTime - now) / 1000);
-                    return message.reply(`Wait ${remaining}s before using !create again.`);
-                }
-            }
-            cooldowns.set(userId, now);
-            try {
-                if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") || content.includes("gay") || content.includes("homosexuality")) {
-                    return message.reply("Are you serious? Spending your time on masturbation, porn, social media, and videogames is pathetic. You are literally sabotaging yourself and throwing your life away. Wake up. Come back when you have sensible requests and the drive to actually do something useful instead of acting like a loser.");
-                }
-
-                const userText = message.content.slice("!create".length).trim();
-                console.log(`[!CREATE-LOG] detected ai prompt call: ${userText}`);
-
-                if (!userText) return message.reply("Say something for Wolfy!");
-                message.reply("Thinking my answer...");
-
-                const systemPrompt = buildPrompt(content, 'create');
-
-                const response = await aiClient.path("/chat/completions").post({
-                    body: {
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: content }
-                        ],
-                        temperature: 1.0,
-                        top_p: 1.0,
-                        model: model
-                    }
-                });
-                const text = response.body.choices[0].message.content;
-                console.log("[!CREATE] Full response object:", response);
-                console.log("[!CREATE] Output message location: response.body.choices[0].message.content");
-                console.log("[!CREATE] Output message text:", text);
-                const channel = await client.channels.fetch(wolfyChat);
-                for (let i = 0; i < text.length; i += chunkSize) {
-                    if (i === 0) {
-                        await message.reply(text.slice(i, i + chunkSize));
-                    } else {
-                        await channel.send(text.slice(i, i + chunkSize));
-                    }
-                    console.log(`[SLICING THE RESPONSE]: i = ${i}`);
-                    console.log(`[SENDING MESSAGE] Channel: ${i === 0 ? 'DM reply to user' : 'wolfyChat channel'}, Message chunk:`, text.slice(i, i + chunkSize));
-                }
-            } catch (error) {
-                console.log("[!CREATE-FALLBACK-LOG] Entering the fallback");
-                console.error(`[!CREATE-FALLBACK-LOG] error: ${error}`);
-                try {
-                    const systemPrompt = buildPrompt(content, 'create');
-                    const response = await aiClient2.path("/chat/completions").post({
-                        body: {
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: content }
-                            ],
-                            temperature: 1.0,
-                            top_p: 1.0,
-                            model: model
-                        }
-                    });
-                    const text = response.body.choices[0].message.content
-                    console.log("[!CREATE-FALLBACK] Full response object:", response);
-                    console.log("[!CREATE-FALLBACK] Output message location: response.body.choices[0].message.content");
-                    console.log("[!CREATE-FALLBACK] Output message text:", text);
-                    const channel = await client.channels.fetch(wolfyChat);
-                    for (let i = 0; i < text.length; i += chunkSize) {
-                        if (i === 0) {
-                            await message.reply(text.slice(i, i + chunkSize));
-                        } else {
-                            await channel.send(text.slice(i, i + chunkSize));
-                        }
-                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
-                    }
-                } catch (error) {
-                    console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
-                    const channel = await client.channels.fetch(wolfyChat).catch(() => null);
-                    if (channel) channel.send(`You probably went against the engine policy, pls stop`);
-                }
-            }
-        }
-
-        if (content.includes("!research")) {
-            const now = Date.now();
-            const userId = message.author.id;
-
-            if (cooldowns.has(userId)) {
-                const expirationTime = cooldowns.get(userId) + cooldownTime;
-                if (now < expirationTime) {
-                    const remaining = Math.ceil((expirationTime - now) / 1000);
-                    return message.reply(`Wait ${remaining}s before using !research again.`);
-                }
-            }
-            cooldowns.set(userId, now);
-            try {
-                if (content.includes("porn") || content.includes("masturbation") || content.includes("fap") || content.includes("videogames") || content.includes("scrolling") || content.includes("gay") || content.includes("homosexuality")) {
-                    return message.reply("Are you serious? Spending your time on masturbation, porn, social media, and videogames is pathetic. You are literally sabotaging yourself and throwing your life away. Wake up. Come back when you have sensible requests and the drive to actually do something useful instead of acting like a loser.");
-                }
-
-                const userText = message.content.slice("!research".length).trim();
-                console.log(`[!RESEARCH-LOG] detected ai prompt call: ${userText}`);
-
-                if (!userText) return message.reply("Say something for Wolfy!");
-
-                // ========================================================================
-                // WEB RESEARCH INTEGRATION
-                // ========================================================================
-                // ALWAYS try Exa AI web research first for every !research command
-                // Only fall back to legacy AI if Exa fails (error or no response)
-                // No keyword detection - always try web search first
-                // ========================================================================
-
-                let webSearchFailed = false;
-                let webResult = null;
-
-                // Always attempt web research if EXA_API_KEY is configured
-                if (isWebResearchConfigured()) {
-                    try {
-                        console.log('[!RESEARCH] Attempting Exa AI web research...');
-                        message.reply("🔍 Searching the web...");
-
-                        // This will throw if Exa fails, causing us to fall back
-                        webResult = await performWebResearch(userText, aiClient, aiClient2, model);
-
-                        // Check if we got a valid response
-                        if (webResult && webResult.needsWebSearch && webResult.answer) {
-                            console.log('[!RESEARCH] Exa AI succeeded, using web results');
-                        } else {
-                            // Exa returned but no valid answer - treat as failure
-                            console.log('[!RESEARCH] Exa returned empty result, falling back to legacy');
-                            webSearchFailed = true;
-                        }
-                    } catch (error) {
-                        // Exa API failed - fall back to legacy
-                        console.error('[!RESEARCH] Exa AI failed:', error.message);
-                        webSearchFailed = true;
-                    }
-                } else {
-                    // EXA_API_KEY not configured
-                    console.log('[!RESEARCH] EXA not configured, using legacy research');
-                    webSearchFailed = true;
-                }
-
-                // Fall back to legacy AI if web search failed (or wasn't configured)
-                if (webSearchFailed || !webResult || !webResult.answer) {
-                    // Fall back to static AI (original behavior)
-                    message.reply("Real time web search failed, proceeding with classic research...");
-                    const systemPrompt = buildPrompt(content, 'research');
-
-                    const response = await aiClient.path("/chat/completions").post({
-                        body: {
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: content }
-                            ],
-                            temperature: 1.0,
-                            top_p: 1.0,
-                            model: model
-                        }
-                    });
-                    const text = response.body.choices[0].message.content;
-                    console.log("[!RESEARCH] Full response object:", response);
-                    console.log("[!RESEARCH] Output message location: response.body.choices[0].message.content");
-                    console.log("[!RESEARCH] Output message text:", text);
-                    const channel = await client.channels.fetch(wolfyChat);
-                    for (let i = 0; i < text.length; i += chunkSize) {
-                        if (i === 0) {
-                            await message.reply(text.slice(i, i + chunkSize));
-                        } else {
-                            await channel.send(text.slice(i, i + chunkSize));
-                        }
-                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
-                        console.log(`[SENDING MESSAGE] Channel: ${i === 0 ? 'DM reply to user' : 'wolfyChat channel'}, Message chunk:`, text.slice(i, i + chunkSize));
-                    }
-                } else {
-                    // Web search result - send as embed
-                    console.log('[!RESEARCH] Sending web research results');
-
-                    const embed = new EmbedBuilder()
-                        .setTitle(`🔍 Research: ${userText}`)
-                        .setColor(0x5865F2)
-                        .setDescription(webResult.answer)
-                        .addFields(
-                            { name: '📚 Sources', value: webResult.sources || 'No sources', inline: false }
-                        )
-                        .setFooter({ text: 'Powered by Wolfy AI • Real-time search' })
-                        .setTimestamp();
-
-                    const channel = await client.channels.fetch(wolfyChat);
-                    await channel.send({ embeds: [embed] });
-                }
-            } catch (error) {
-                console.log("[!RESEARCH-FALLBACK-LOG] Entering the fallback");
-                console.error(`[!RESEARCH-FALLBACK-LOG] error: ${error}`);
-                try {
-                    const systemPrompt = buildPrompt(content, 'research');
-                    const response = await aiClient2.path("/chat/completions").post({
-                        body: {
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: content }
-                            ],
-                            temperature: 1.0,
-                            top_p: 1.0,
-                            model: model
-                        }
-                    });
-                    const text = response.body.choices[0].message.content
-                    console.log("[!RESEARCH-FALLBACK] Full response object:", response);
-                    console.log("[!RESEARCH-FALLBACK] Output message location: response.body.choices[0].message.content");
-                    console.log("[!RESEARCH-FALLBACK] Output message text:", text);
-                    const channel = await client.channels.fetch(wolfyChat);
-                    for (let i = 0; i < text.length; i += chunkSize) {
-                        if (i === 0) {
-                            await message.reply(text.slice(i, i + chunkSize));
-                        } else {
-                            await channel.send(text.slice(i, i + chunkSize));
-                        }
-                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
-                    }
-                } catch (error) {
-                    console.error(`[FALLBACK-LOG] Fallback error: ${error}`);
-                    const channel = await client.channels.fetch(wolfyChat).catch(() => null);
-                    if (channel) channel.send(`You probably went against the engine policy, pls stop`);
-                }
-            }
-        }
-
-        if (content.includes('!addquote')) {
-            try {
-                const quote = message.content.split("!addquote")[1];
-                const author = message.author.globalName
-                console.log(quote);
-                console.log(author);
-                await Quotes.create({
-                    content: quote,
-                    author: author
-                });
-                randomQuotes = await Quotes.find({});
-                message.reply(`Quote created successfully!: ***${quote} - ${author}***`);
-            } catch (error) {
-                console.log(`[!ADDQUOTE-ERROR] There has been an error with the !addquote command: ${error}`)
-            }
-        }
-
-        if (content.includes("!meme") || content.includes("!domain")) {
-            const now = Date.now();
-            const userId = message.author.id;
-
-            if (cooldowns.has(userId)) {
-                const expirationTime = cooldowns.get(userId) + cooldownTime;
-                if (now < expirationTime) {
-                    const remaining = Math.ceil((expirationTime - now) / 1000);
-                    return message.reply(`Wait ${remaining}s before using ${content.includes("!meme") ? "!meme" : "!domain"} again.`);
-                }
-            }
-            cooldowns.set(userId, now);
-            try {
-                const userText = content.includes("!meme") ? message.content.slice("!meme".length).trim() : message.content.slice("!domain".length).trim();
-                console.log(`[!MEME/DOMAIN-LOG] detected: ${userText}`);
-                if (!userText) return message.reply("Say something for Wolfy!");
-                message.reply("Creating something hilarious...");
-
-                const mode = content.includes("!domain") ? 'domain' : 'meme';
-                const systemPrompt = buildPrompt(content, mode);
-                const response = await aiClient.path("/chat/completions").post({
-                    body: {
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: userText }
-                        ],
-                        temperature: 1.0,
-                        top_p: 1.0,
-                        model: model
-                    }
-                });
-                const text = response.body.choices[0].message.content;
-                console.log("[!MEME/DOMAIN] Output:", text);
-                const channel = await client.channels.fetch(wolfyChat);
-                for (let i = 0; i < text.length; i += chunkSize) {
-                    if (i === 0) {
-                        await message.reply(text.slice(i, i + chunkSize));
-                    } else {
-                        await channel.send(text.slice(i, i + chunkSize));
-                    }
-                }
-            } catch (error) {
-                console.log("[!MEME/DOMAIN-FALLBACK] Trying alt client");
-                try {
-                    const userText = content.includes("!meme") ? message.content.slice("!meme".length).trim() : message.content.slice("!domain".length).trim();
-                    const mode = content.includes("!domain") ? 'domain' : 'meme';
-                    const systemPrompt = buildPrompt(content, mode);
-                    const response = await aiClient2.path("/chat/completions").post({
-                        body: {
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: userText }
-                            ],
-                            temperature: 1.0,
-                            top_p: 1.0,
-                            model: model
-                        }
-                    });
-                    const text = response.body.choices[0].message.content;
-                    const channel = await client.channels.fetch(wolfyChat);
-                    for (let i = 0; i < text.length; i += chunkSize) {
-                        if (i === 0) {
-                            await message.reply(text.slice(i, i + chunkSize));
-                        } else {
-                            await channel.send(text.slice(i, i + chunkSize));
-                        }
-                    }
-                } catch (err) {
-                    console.error("[!MEME/DOMAIN-ERROR]", err);
-                    message.reply("Wolfy tripped on his own paws, try again");
-                }
-            }
-        }
-
-        // if (!content.includes("!wolfy")) return;
-
-        if (content.includes("!wolfy")) {
-            const now = Date.now();
-            const userId = message.author.id;
-
-            if (cooldowns.has(userId)) {
-                const expirationTime = cooldowns.get(userId) + cooldownTime;
-                if (now < expirationTime) {
-                    const remaining = Math.ceil((expirationTime - now) / 1000);
-                    return message.reply(`Wait ${remaining}s before using !wolfy again.`);
-                }
-            }
-            cooldowns.set(userId, now);
-            try {
-                const userText = message.content.slice("!wolfy".length).trim();
-                console.log(`[!WOLFY-LOG] detected ai prompt call: ${userText}`);
-
-                if (!userText) return message.reply("Say something for Wolfy!");
-                message.reply("Thinking my answer...");
-
-                // ========================================================================
-                // PROMPT SYSTEM INTEGRATION - !wolfy command
-                // ========================================================================
-                // HOW IT WORKS:
-                // 1. Take FULL message (including "!wolfy" prefix) as input
-                // 2. Call buildPrompt(message, 'wolfy') 
-                // 3. buildPrompt() does:
-                //    - detectTopics() → scans for keywords (gender, productivity, etc.)
-                //    - isLuposRelated() → checks if LUPOS mentioned
-                //    - buildWolfyPrompt() → assembles: CORE_IDENTITY + optional LUPOS_CONTEXT + optional BELIEF_MODULES
-                // 4. Result: Clean answer for unrelated topics, full context for relevant ones
-                //
-                // DEBUG: Check console for "[PROMPTS] Mode: wolfy, Detected topics: gender, LUPOS: false"
-                // ========================================================================
-                const systemPrompt = buildPrompt(content, 'wolfy');
-
-                const response = await aiClient.path("/chat/completions").post({
-                    body: {
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: content }
-                        ],
-                        temperature: 1.0,
-                        top_p: 1.0,
-                        model: model
-                    }
-                });
-                const text = response.body.choices[0].message.content;
-                console.log("[!WOLFY] Full response object:", response);
-                console.log("[!WOLFY] Output message location: response.body.choices[0].message.content");
-                console.log("[!WOLFY] Output message text:", text);
-                const channel = await client.channels.fetch(wolfyChat);
-                for (let i = 0; i < text.length; i += chunkSize) {
-                    if (i === 0) {
-                        await message.reply(text.slice(i, i + chunkSize));
-                    } else {
-                        await channel.send(text.slice(i, i + chunkSize));
-                    }
-                    console.log(`[SLICING THE RESPONSE]: i = ${i}`);
-                    console.log(`[SENDING MESSAGE] Channel: ${i === 0 ? 'DM reply to user' : 'wolfyChat channel'}, Message chunk:`, text.slice(i, i + chunkSize));
-                }
-            } catch (error) {
-                console.log("!RESEARCH-[FALLBACK-LOG] Entering the fallback");
-                console.error(`!RESEARCH-[FALLBACK-LOG] error: ${error}`);
-                try {
-                    const systemPrompt = buildPrompt(content, 'wolfy');
-                    const response = await aiClient2.path("/chat/completions").post({
-                        body: {
-                            messages: [
-                                { role: "system", content: systemPrompt },
-                                { role: "user", content: content }
-                            ],
-                            temperature: 1.0,
-                            top_p: 1.0,
-                            model: model
-                        }
-                    });
-                    const text = response.body.choices[0].message.content
-                    console.log("[!WOLFY-FALLBACK] Full response object:", response);
-                    console.log("[!WOLFY-FALLBACK] Output message location: response.body.choices[0].message.content");
-                    console.log("[!WOLFY-FALLBACK] Output message text:", text);
-                    const channel = await client.channels.fetch(wolfyChat);
-                    for (let i = 0; i < text.length; i += chunkSize) {
-                        if (i === 0) {
-                            await message.reply(text.slice(i, i + chunkSize));
-                        } else {
-                            await channel.send(text.slice(i, i + chunkSize));
-                        }
-                        console.log(`[SLICING THE RESPONSE]: i = ${i}`);
-                    }
-                } catch (error) {
-                    console.error(`[!RESEARCH-FALLBACK-LOG] Fallback error: ${error}`);
-                    const channel = await client.channels.fetch(wolfyChat).catch(() => null);
-                    if (channel) channel.send(`You probably went against the engine policy, pls stop`);
-                }
-            }
-        }
-    } else if (message.channelId != wolfyChat && message.content.startsWith("!")) {
-        message.reply(`Listen, i cant tell if you just put a random esclamation mark (!) at the beginning of the sentence or you invoked one of my fabolous commands, in case you did.... Does this seem Wolfy house to you? WE'RE LITERALLY IN <#${message.channelId}> YOU IDIOT`);
-    }
 });
 
 function getRandomInt(min, max) {
@@ -542,11 +115,53 @@ function getRandomInt(min, max) {
 
 client.login(discordToken);
 
+/**
+ * =============================================================================
+ * SLASH COMMANDS HANDLER
+ * =============================================================================
+ * Handles all slash command interactions
+ * Routes each command to its appropriate handler function
+ * =============================================================================
+ */
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.commandName === 'summarize') {
-        await handleSummarizeCommand(interaction);
+    const commandName = interaction.commandName;
+    console.log(`[SLASH-COMMAND] Received: /${commandName}`);
+
+    // Route to appropriate handler based on command name
+    switch (commandName) {
+        case 'summarize':
+            await handleSummarizeCommand(interaction);
+            break;
+            
+        case 'wolfy':
+            await handleWolfyCommand(interaction);
+            break;
+            
+        case 'research':
+            await handleResearchCommand(interaction);
+            break;
+            
+        case 'create':
+            await handleCreateCommand(interaction);
+            break;
+            
+        case 'meme':
+            await handleMemeCommand(interaction);
+            break;
+            
+        case 'domain':
+            await handleDomainCommand(interaction);
+            break;
+            
+        case 'addquote':
+            await handleAddQuoteCommand(interaction);
+            break;
+            
+        default:
+            console.log(`[SLASH-COMMAND] Unknown command: ${commandName}`);
+            await interaction.reply({ content: 'Unknown command.', ephemeral: true });
     }
 });
 
@@ -696,5 +311,474 @@ async function handleSummarizeCommand(interaction) {
         console.error('[SUMMARIZE-COMMAND] Error:', error.message);
         console.error('[SUMMARIZE-COMMAND] Stack:', error.stack);
         await interaction.editReply({ content: 'Failed to generate summary. Try fewer messages or different settings.' });
+    }
+}
+
+/**
+ * =============================================================================
+ * HANDLER: /wolfy - Chat with Wolfy AI
+ * =============================================================================
+ * Uses buildPrompt for topic-aware responses
+ */
+async function handleWolfyCommand(interaction) {
+    const userText = interaction.options.getString('message');
+    console.log(`[/wolfy] User message: ${userText}`);
+    
+    // Check cooldown
+    const now = Date.now();
+    const userId = interaction.user.id;
+    if (cooldowns.has(userId)) {
+        const expirationTime = cooldowns.get(userId) + cooldownTime;
+        if (now < expirationTime) {
+            const remaining = Math.ceil((expirationTime - now) / 1000);
+            return interaction.reply({ content: `Wait ${remaining}s before using /wolfy again.`, ephemeral: true });
+        }
+    }
+    cooldowns.set(userId, now);
+    
+    try {
+        await interaction.deferReply();
+        
+        // Use prompt system for topic-aware responses
+        const systemPrompt = buildPrompt(`!wolfy ${userText}`, 'wolfy');
+        
+        const response = await aiClient.path("/chat/completions").post({
+            body: {
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: `!wolfy ${userText}` }
+                ],
+                temperature: 1.0,
+                top_p: 1.0,
+                model: model
+            }
+        });
+        
+        const text = response.body.choices[0].message.content;
+        console.log(`[/wolfy] Response: ${text.slice(0, 100)}...`);
+        
+        // Send response (chunked if needed)
+        const channel = await client.channels.fetch(wolfyChat);
+        for (let i = 0; i < text.length; i += chunkSize) {
+            if (i === 0) {
+                await interaction.editReply(text.slice(i, i + chunkSize));
+            } else {
+                await channel.send(text.slice(i, i + chunkSize));
+            }
+        }
+        
+    } catch (error) {
+        console.error('[/wolfy] Error:', error.message);
+        try {
+            const systemPrompt = buildPrompt(`!wolfy ${userText}`, 'wolfy');
+            const response = await aiClient2.path("/chat/completions").post({
+                body: {
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: `!wolfy ${userText}` }
+                    ],
+                    temperature: 1.0,
+                    top_p: 1.0,
+                    model: model
+                }
+            });
+            const text = response.body.choices[0].message.content;
+            const channel = await client.channels.fetch(wolfyChat);
+            for (let i = 0; i < text.length; i += chunkSize) {
+                if (i === 0) {
+                    await interaction.editReply(text.slice(i, i + chunkSize));
+                } else {
+                    await channel.send(text.slice(i, i + chunkSize));
+                }
+            }
+        } catch (fallbackError) {
+            console.error('[/wolfy] Fallback error:', fallbackError.message);
+            await interaction.editReply({ content: 'Wolfy failed to respond. Try again later.' });
+        }
+    }
+}
+
+/**
+ * =============================================================================
+ * HANDLER: /research - Web-powered research
+ * =============================================================================
+ * Always uses Exa AI for real-time search, falls back to legacy on error
+ */
+async function handleResearchCommand(interaction) {
+    const userText = interaction.options.getString('query');
+    console.log(`[/research] Query: ${userText}`);
+    
+    // Check cooldown
+    const now = Date.now();
+    const userId = interaction.user.id;
+    if (cooldowns.has(userId)) {
+        const expirationTime = cooldowns.get(userId) + cooldownTime;
+        if (now < expirationTime) {
+            const remaining = Math.ceil((expirationTime - now) / 1000);
+            return interaction.reply({ content: `Wait ${remaining}s before using /research again.`, ephemeral: true });
+        }
+    }
+    cooldowns.set(userId, now);
+    
+    try {
+        await interaction.deferReply();
+        
+        // Try Exa AI web research first
+        if (isWebResearchConfigured()) {
+            try {
+                console.log('[/research] Attempting Exa AI web research...');
+                const webResult = await performWebResearch(userText, aiClient, aiClient2, model);
+                
+                if (webResult && webResult.needsWebSearch && webResult.answer) {
+                    console.log('[/research] Exa AI succeeded');
+                    
+                    const embed = new EmbedBuilder()
+                        .setTitle(`🔍 Research: ${userText}`)
+                        .setColor(0x5865F2)
+                        .setDescription(webResult.answer)
+                        .addFields(
+                            { name: '📚 Sources', value: webResult.sources || 'No sources', inline: false }
+                        )
+                        .setFooter({ text: 'Powered by Wolfy AI • Real-time search' })
+                        .setTimestamp();
+                    
+                    const channel = await client.channels.fetch(wolfyChat);
+                    await channel.send({ embeds: [embed] });
+                    await interaction.editReply({ content: 'Research complete!' });
+                    return;
+                }
+            } catch (exaError) {
+                console.error('[/research] Exa failed:', exaError.message);
+            }
+        }
+        
+        // Fall back to legacy AI research
+        console.log('[/research] Using legacy AI research');
+        const systemPrompt = buildPrompt(`!research ${userText}`, 'research');
+        
+        const response = await aiClient.path("/chat/completions").post({
+            body: {
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: `!research ${userText}` }
+                ],
+                temperature: 1.0,
+                top_p: 1.0,
+                model: model
+            }
+        });
+        
+        const text = response.body.choices[0].message.content;
+        console.log(`[/research] Legacy response: ${text.slice(0, 100)}...`);
+        
+        const channel = await client.channels.fetch(wolfyChat);
+        for (let i = 0; i < text.length; i += chunkSize) {
+            if (i === 0) {
+                await interaction.editReply(text.slice(i, i + chunkSize));
+            } else {
+                await channel.send(text.slice(i, i + chunkSize));
+            }
+        }
+        
+    } catch (error) {
+        console.error('[/research] Error:', error.message);
+        try {
+            const systemPrompt = buildPrompt(`!research ${userText}`, 'research');
+            const response = await aiClient2.path("/chat/completions").post({
+                body: {
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: `!research ${userText}` }
+                    ],
+                    temperature: 1.0,
+                    top_p: 1.0,
+                    model: model
+                }
+            });
+            const text = response.body.choices[0].message.content;
+            const channel = await client.channels.fetch(wolfyChat);
+            for (let i = 0; i < text.length; i += chunkSize) {
+                if (i === 0) {
+                    await interaction.editReply(text.slice(i, i + chunkSize));
+                } else {
+                    await channel.send(text.slice(i, i + chunkSize));
+                }
+            }
+        } catch (fallbackError) {
+            console.error('[/research] Fallback error:', fallbackError.message);
+            await interaction.editReply({ content: 'Research failed. Try again later.' });
+        }
+    }
+}
+
+/**
+ * =============================================================================
+ * HANDLER: /create - Creative AI generation
+ * =============================================================================
+ */
+async function handleCreateCommand(interaction) {
+    const userText = interaction.options.getString('prompt');
+    console.log(`[/create] Prompt: ${userText}`);
+    
+    // Check cooldown
+    const now = Date.now();
+    const userId = interaction.user.id;
+    if (cooldowns.has(userId)) {
+        const expirationTime = cooldowns.get(userId) + cooldownTime;
+        if (now < expirationTime) {
+            const remaining = Math.ceil((expirationTime - now) / 1000);
+            return interaction.reply({ content: `Wait ${remaining}s before using /create again.`, ephemeral: true });
+        }
+    }
+    cooldowns.set(userId, now);
+    
+    try {
+        await interaction.deferReply();
+        
+        const systemPrompt = buildPrompt(`!create ${userText}`, 'create');
+        
+        const response = await aiClient.path("/chat/completions").post({
+            body: {
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: `!create ${userText}` }
+                ],
+                temperature: 1.0,
+                top_p: 1.0,
+                model: model
+            }
+        });
+        
+        const text = response.body.choices[0].message.content;
+        console.log(`[/create] Response: ${text.slice(0, 100)}...`);
+        
+        const channel = await client.channels.fetch(wolfyChat);
+        for (let i = 0; i < text.length; i += chunkSize) {
+            if (i === 0) {
+                await interaction.editReply(text.slice(i, i + chunkSize));
+            } else {
+                await channel.send(text.slice(i, i + chunkSize));
+            }
+        }
+        
+    } catch (error) {
+        console.error('[/create] Error:', error.message);
+        try {
+            const systemPrompt = buildPrompt(`!create ${userText}`, 'create');
+            const response = await aiClient2.path("/chat/completions").post({
+                body: {
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: `!create ${userText}` }
+                    ],
+                    temperature: 1.0,
+                    top_p: 1.0,
+                    model: model
+                }
+            });
+            const text = response.body.choices[0].message.content;
+            const channel = await client.channels.fetch(wolfyChat);
+            for (let i = 0; i < text.length; i += chunkSize) {
+                if (i === 0) {
+                    await interaction.editReply(text.slice(i, i + chunkSize));
+                } else {
+                    await channel.send(text.slice(i, i + chunkSize));
+                }
+            }
+        } catch (fallbackError) {
+            console.error('[/create] Fallback error:', fallbackError.message);
+            await interaction.editReply({ content: 'Creation failed. Try again later.' });
+        }
+    }
+}
+
+/**
+ * =============================================================================
+ * HANDLER: /meme - Generate LUPOS memes
+ * =============================================================================
+ */
+async function handleMemeCommand(interaction) {
+    const userText = interaction.options.getString('topic') || '';
+    console.log(`[/meme] Topic: ${userText || 'random'}`);
+    
+    // Check cooldown
+    const now = Date.now();
+    const userId = interaction.user.id;
+    if (cooldowns.has(userId)) {
+        const expirationTime = cooldowns.get(userId) + cooldownTime;
+        if (now < expirationTime) {
+            const remaining = Math.ceil((expirationTime - now) / 1000);
+            return interaction.reply({ content: `Wait ${remaining}s before using /meme again.`, ephemeral: true });
+        }
+    }
+    cooldowns.set(userId, now);
+    
+    try {
+        await interaction.deferReply();
+        
+        const systemPrompt = buildPrompt(`!meme ${userText}`, 'meme');
+        
+        const response = await aiClient.path("/chat/completions").post({
+            body: {
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: `!meme ${userText}` }
+                ],
+                temperature: 1.0,
+                top_p: 1.0,
+                model: model
+            }
+        });
+        
+        const text = response.body.choices[0].message.content;
+        console.log(`[/meme] Response: ${text.slice(0, 100)}...`);
+        
+        const channel = await client.channels.fetch(wolfyChat);
+        for (let i = 0; i < text.length; i += chunkSize) {
+            if (i === 0) {
+                await interaction.editReply(text.slice(i, i + chunkSize));
+            } else {
+                await channel.send(text.slice(i, i + chunkSize));
+            }
+        }
+        
+    } catch (error) {
+        console.error('[/meme] Error:', error.message);
+        try {
+            const systemPrompt = buildPrompt(`!meme ${userText}`, 'meme');
+            const response = await aiClient2.path("/chat/completions").post({
+                body: {
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: `!meme ${userText}` }
+                    ],
+                    temperature: 1.0,
+                    top_p: 1.0,
+                    model: model
+                }
+            });
+            const text = response.body.choices[0].message.content;
+            const channel = await client.channels.fetch(wolfyChat);
+            for (let i = 0; i < text.length; i += chunkSize) {
+                if (i === 0) {
+                    await interaction.editReply(text.slice(i, i + chunkSize));
+                } else {
+                    await channel.send(text.slice(i, i + chunkSize));
+                }
+            }
+        } catch (fallbackError) {
+            console.error('[/meme] Fallback error:', fallbackError.message);
+            await interaction.editReply({ content: 'Meme generation failed. Try again later.' });
+        }
+    }
+}
+
+/**
+ * =============================================================================
+ * HANDLER: /domain - Domain expansion battle
+ * =============================================================================
+ */
+async function handleDomainCommand(interaction) {
+    const userText = interaction.options.getString('character') || '';
+    console.log(`[/domain] Character: ${userText || 'random'}`);
+    
+    // Check cooldown
+    const now = Date.now();
+    const userId = interaction.user.id;
+    if (cooldowns.has(userId)) {
+        const expirationTime = cooldowns.get(userId) + cooldownTime;
+        if (now < expirationTime) {
+            const remaining = Math.ceil((expirationTime - now) / 1000);
+            return interaction.reply({ content: `Wait ${remaining}s before using /domain again.`, ephemeral: true });
+        }
+    }
+    cooldowns.set(userId, now);
+    
+    try {
+        await interaction.deferReply();
+        
+        const systemPrompt = buildPrompt(`!domain ${userText}`, 'domain');
+        
+        const response = await aiClient.path("/chat/completions").post({
+            body: {
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: `!domain ${userText}` }
+                ],
+                temperature: 1.0,
+                top_p: 1.0,
+                model: model
+            }
+        });
+        
+        const text = response.body.choices[0].message.content;
+        console.log(`[/domain] Response: ${text.slice(0, 100)}...`);
+        
+        const channel = await client.channels.fetch(wolfyChat);
+        for (let i = 0; i < text.length; i += chunkSize) {
+            if (i === 0) {
+                await interaction.editReply(text.slice(i, i + chunkSize));
+            } else {
+                await channel.send(text.slice(i, i + chunkSize));
+            }
+        }
+        
+    } catch (error) {
+        console.error('[/domain] Error:', error.message);
+        try {
+            const systemPrompt = buildPrompt(`!domain ${userText}`, 'domain');
+            const response = await aiClient2.path("/chat/completions").post({
+                body: {
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: `!domain ${userText}` }
+                    ],
+                    temperature: 1.0,
+                    top_p: 1.0,
+                    model: model
+                }
+            });
+            const text = response.body.choices[0].message.content;
+            const channel = await client.channels.fetch(wolfyChat);
+            for (let i = 0; i < text.length; i += chunkSize) {
+                if (i === 0) {
+                    await interaction.editReply(text.slice(i, i + chunkSize));
+                } else {
+                    await channel.send(text.slice(i, i + chunkSize));
+                }
+            }
+        } catch (fallbackError) {
+            console.error('[/domain] Fallback error:', fallbackError.message);
+            await interaction.editReply({ content: 'Domain expansion failed. Try again later.' });
+        }
+    }
+}
+
+/**
+ * =============================================================================
+ * HANDLER: /addquote - Add a quote to database
+ * =============================================================================
+ */
+async function handleAddQuoteCommand(interaction) {
+    const quoteText = interaction.options.getString('text');
+    console.log(`[/addquote] Quote: ${quoteText}`);
+    
+    try {
+        const author = interaction.user.globalName || interaction.user.username;
+        console.log('[/addquote] Author:', author);
+        
+        await Quotes.create({
+            content: quoteText,
+            author: author
+        });
+        
+        // Refresh quotes cache
+        randomQuotes = await Quotes.find({});
+        
+        await interaction.reply({ content: `✅ Quote added: ***${quoteText} - ${author}***` });
+        
+    } catch (error) {
+        console.error('[/addquote] Error:', error.message);
+        await interaction.reply({ content: 'Failed to add quote. Try again later.' });
     }
 }

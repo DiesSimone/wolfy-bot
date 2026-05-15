@@ -1,55 +1,108 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 /**
- * Slash command definition for /summarize
- * 
- * Options:
- * - count: Number of messages to fetch (10-300, default 50)
- *   REMOVED: 'depth' option - now uses default 'normal' depth internally
- *   REMOVED: 'topic' option - topic filtering feature removed
- * 
- * Permissions: User needs ReadMessageHistory to use this command
- * This automatically respects Discord channel permissions!
+ * =============================================================================
+ * SLASH COMMANDS DEFINITIONS
+ * =============================================================================
+ * All commands for Wolfy Bot - migrating from ! prefix to / slash commands
+ * =============================================================================
  */
+
+// =============================================================================
+// 1. /summarize - Summarize messages in channel
+// =============================================================================
 const summarizeCommand = new SlashCommandBuilder()
     .setName('summarize')
     .setDescription('Summarize recent messages in this channel')
-    
-    // ========================================================================
-    // COUNT OPTION - Only remaining parameter
-    // ========================================================================
-    // - Min: 10 messages
-    // - Max: 100 messages (Discord API limit - can't fetch more than 100 at once)
-    // - Default: 50 messages
-    // ========================================================================
     .addIntegerOption(option =>
         option.setName('count')
             .setDescription('Number of messages to analyze (10-100, default: 50)')
             .setMinValue(10)
             .setMaxValue(100)
     )
-    
-    // REMOVED: Depth option was removed - the bot now uses 'normal' depth internally
-    // This simplifies the command - no more depth selection required
-    
-    // REMOVED: Topic filter option was removed
-    // This feature was seldom used and added complexity
-    
-    // This ensures only users who can read messages can use the command
-    // Privacy: If user can't see messages, they can't summarize them!
     .setDefaultMemberPermissions(PermissionFlagsBits.ReadMessageHistory);
 
+// =============================================================================
+// 2. /wolfy - Chat with Wolfy AI
+// =============================================================================
+const wolfyCommand = new SlashCommandBuilder()
+    .setName('wolfy')
+    .setDescription('Chat with Wolfy AI')
+    .addStringOption(option =>
+        option.setName('message')
+            .setDescription('What you want to ask Wolfy')
+            .setRequired(true)
+    );
+
+// =============================================================================
+// 3. /research - Web-powered research with Exa AI
+// =============================================================================
+const researchCommand = new SlashCommandBuilder()
+    .setName('research')
+    .setDescription('Research any topic using real-time web search')
+    .addStringOption(option =>
+        option.setName('query')
+            .setDescription('What you want to research')
+            .setRequired(true)
+    );
+
+// =============================================================================
+// 4. /create - Creative AI generation
+// =============================================================================
+const createCommand = new SlashCommandBuilder()
+    .setName('create')
+    .setDescription('Generate creative content with AI')
+    .addStringOption(option =>
+        option.setName('prompt')
+            .setDescription('What you want to create')
+            .setRequired(true)
+    );
+
+// =============================================================================
+// 5. /meme - Generate LUPOS memes
+// =============================================================================
+const memeCommand = new SlashCommandBuilder()
+    .setName('meme')
+    .setDescription('Generate LUPOS-themed memes')
+    .addStringOption(option =>
+        option.setName('topic')
+            .setDescription('What the meme should be about (optional)')
+            .setRequired(false)
+    );
+
+// =============================================================================
+// 6. /domain - Domain expansion battle (JJK style)
+// =============================================================================
+const domainCommand = new SlashCommandBuilder()
+    .setName('domain')
+    .setDescription('Generate a domain expansion battle scene')
+    .addStringOption(option =>
+        option.setName('character')
+            .setDescription('Which LUPOS character (optional, random if not specified)')
+            .setRequired(false)
+    );
+
+// =============================================================================
+// 7. /addquote - Add a quote to the database
+// =============================================================================
+const addquoteCommand = new SlashCommandBuilder()
+    .setName('addquote')
+    .setDescription('Add a quote to Wolfy\'s quote collection')
+    .addStringOption(option =>
+        option.setName('text')
+            .setDescription('The quote text')
+            .setRequired(true)
+    );
+
 /**
- * Register slash commands to a specific guild
- * 
- * DEBUG: If commands don't appear:
- * - Check GUILD_ID is set in .env
- * - Check bot has "Manage Commands" permission
- * - Use /commands command in Discord to manually force sync
- * - Check console for registration errors
+ * =============================================================================
+ * COMMAND REGISTRATION
+ * =============================================================================
+ * Registers all slash commands to the specified guild
  * 
  * @param {Client} client - Discord client instance
- * @param {string} guildId - Discord server ID to register to
+ * @param {string} guildId - Discord server ID
+ * =============================================================================
  */
 async function registerSlashCommands(client, guildId) {
     try {
@@ -61,11 +114,22 @@ async function registerSlashCommands(client, guildId) {
             return;
         }
 
-        const commands = [summarizeCommand.toJSON()];
+        // ========================================================================
+        // ALL COMMANDS - Array of all slash commands to register
+        // ========================================================================
+        const commands = [
+            summarizeCommand.toJSON(),
+            wolfyCommand.toJSON(),
+            researchCommand.toJSON(),
+            createCommand.toJSON(),
+            memeCommand.toJSON(),
+            domainCommand.toJSON(),
+            addquoteCommand.toJSON()
+        ];
         
-        // set() replaces all commands - only include commands you want available
+        // set() replaces all commands - registers all at once
         await guild.commands.set(commands);
-        console.log('[SLASH-COMMANDS] Successfully registered /summarize command');
+        console.log('[SLASH-COMMANDS] Successfully registered all commands');
         
         // List registered commands for debugging
         const registered = await guild.commands.fetch();
@@ -77,4 +141,13 @@ async function registerSlashCommands(client, guildId) {
     }
 }
 
-module.exports = { registerSlashCommands, summarizeCommand };
+module.exports = { 
+    registerSlashCommands, 
+    summarizeCommand,
+    wolfyCommand,
+    researchCommand,
+    createCommand,
+    memeCommand,
+    domainCommand,
+    addquoteCommand
+};
