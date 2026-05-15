@@ -94,6 +94,13 @@ const addquoteCommand = new SlashCommandBuilder()
             .setRequired(true)
     );
 
+// =============================================================================
+// 8. /help - Show all available commands
+// =============================================================================
+const helpCommand = new SlashCommandBuilder()
+    .setName('help')
+    .setDescription('Show all available Wolfy commands');
+
 /**
  * =============================================================================
  * COMMAND REGISTRATION
@@ -124,7 +131,8 @@ async function registerSlashCommands(client, guildId) {
             createCommand.toJSON(),
             memeCommand.toJSON(),
             domainCommand.toJSON(),
-            addquoteCommand.toJSON()
+            addquoteCommand.toJSON(),
+            helpCommand.toJSON()
         ];
         
         // set() replaces all commands - registers all at once
@@ -149,5 +157,6 @@ module.exports = {
     createCommand,
     memeCommand,
     domainCommand,
-    addquoteCommand
+    addquoteCommand,
+    helpCommand
 };

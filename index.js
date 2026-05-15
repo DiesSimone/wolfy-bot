@@ -134,31 +134,35 @@ client.on('interactionCreate', async interaction => {
         case 'summarize':
             await handleSummarizeCommand(interaction);
             break;
-            
+
         case 'wolfy':
             await handleWolfyCommand(interaction);
             break;
-            
+
         case 'research':
             await handleResearchCommand(interaction);
             break;
-            
+
         case 'create':
             await handleCreateCommand(interaction);
             break;
-            
+
         case 'meme':
             await handleMemeCommand(interaction);
             break;
-            
+
         case 'domain':
             await handleDomainCommand(interaction);
             break;
-            
+
         case 'addquote':
             await handleAddQuoteCommand(interaction);
             break;
-            
+
+        case 'help':
+            await handleHelpCommand(interaction);
+            break;
+
         default:
             console.log(`[SLASH-COMMAND] Unknown command: ${commandName}`);
             await interaction.reply({ content: 'Unknown command.', ephemeral: true });
@@ -323,7 +327,7 @@ async function handleSummarizeCommand(interaction) {
 async function handleWolfyCommand(interaction) {
     const userText = interaction.options.getString('message');
     console.log(`[/wolfy] User message: ${userText}`);
-    
+
     // Check cooldown
     const now = Date.now();
     const userId = interaction.user.id;
@@ -335,13 +339,13 @@ async function handleWolfyCommand(interaction) {
         }
     }
     cooldowns.set(userId, now);
-    
+
     try {
         await interaction.deferReply();
-        
+
         // Use prompt system for topic-aware responses
         const systemPrompt = buildPrompt(`!wolfy ${userText}`, 'wolfy');
-        
+
         const response = await aiClient.path("/chat/completions").post({
             body: {
                 messages: [
@@ -353,10 +357,10 @@ async function handleWolfyCommand(interaction) {
                 model: model
             }
         });
-        
+
         const text = response.body.choices[0].message.content;
         console.log(`[/wolfy] Response: ${text.slice(0, 100)}...`);
-        
+
         // Send response (chunked if needed)
         const channel = await client.channels.fetch(wolfyChat);
         for (let i = 0; i < text.length; i += chunkSize) {
@@ -366,7 +370,7 @@ async function handleWolfyCommand(interaction) {
                 await channel.send(text.slice(i, i + chunkSize));
             }
         }
-        
+
     } catch (error) {
         console.error('[/wolfy] Error:', error.message);
         try {
@@ -407,7 +411,7 @@ async function handleWolfyCommand(interaction) {
 async function handleResearchCommand(interaction) {
     const userText = interaction.options.getString('query');
     console.log(`[/research] Query: ${userText}`);
-    
+
     // Check cooldown
     const now = Date.now();
     const userId = interaction.user.id;
@@ -419,19 +423,19 @@ async function handleResearchCommand(interaction) {
         }
     }
     cooldowns.set(userId, now);
-    
+
     try {
         await interaction.deferReply();
-        
+
         // Try Exa AI web research first
         if (isWebResearchConfigured()) {
             try {
                 console.log('[/research] Attempting Exa AI web research...');
                 const webResult = await performWebResearch(userText, aiClient, aiClient2, model);
-                
+
                 if (webResult && webResult.needsWebSearch && webResult.answer) {
                     console.log('[/research] Exa AI succeeded');
-                    
+
                     const embed = new EmbedBuilder()
                         .setTitle(`🔍 Research: ${userText}`)
                         .setColor(0x5865F2)
@@ -441,7 +445,7 @@ async function handleResearchCommand(interaction) {
                         )
                         .setFooter({ text: 'Powered by Wolfy AI • Real-time search' })
                         .setTimestamp();
-                    
+
                     const channel = await client.channels.fetch(wolfyChat);
                     await channel.send({ embeds: [embed] });
                     await interaction.editReply({ content: 'Research complete!' });
@@ -451,11 +455,11 @@ async function handleResearchCommand(interaction) {
                 console.error('[/research] Exa failed:', exaError.message);
             }
         }
-        
+
         // Fall back to legacy AI research
         console.log('[/research] Using legacy AI research');
         const systemPrompt = buildPrompt(`!research ${userText}`, 'research');
-        
+
         const response = await aiClient.path("/chat/completions").post({
             body: {
                 messages: [
@@ -467,10 +471,10 @@ async function handleResearchCommand(interaction) {
                 model: model
             }
         });
-        
+
         const text = response.body.choices[0].message.content;
         console.log(`[/research] Legacy response: ${text.slice(0, 100)}...`);
-        
+
         const channel = await client.channels.fetch(wolfyChat);
         for (let i = 0; i < text.length; i += chunkSize) {
             if (i === 0) {
@@ -479,7 +483,7 @@ async function handleResearchCommand(interaction) {
                 await channel.send(text.slice(i, i + chunkSize));
             }
         }
-        
+
     } catch (error) {
         console.error('[/research] Error:', error.message);
         try {
@@ -519,7 +523,7 @@ async function handleResearchCommand(interaction) {
 async function handleCreateCommand(interaction) {
     const userText = interaction.options.getString('prompt');
     console.log(`[/create] Prompt: ${userText}`);
-    
+
     // Check cooldown
     const now = Date.now();
     const userId = interaction.user.id;
@@ -531,12 +535,12 @@ async function handleCreateCommand(interaction) {
         }
     }
     cooldowns.set(userId, now);
-    
+
     try {
         await interaction.deferReply();
-        
+
         const systemPrompt = buildPrompt(`!create ${userText}`, 'create');
-        
+
         const response = await aiClient.path("/chat/completions").post({
             body: {
                 messages: [
@@ -548,10 +552,10 @@ async function handleCreateCommand(interaction) {
                 model: model
             }
         });
-        
+
         const text = response.body.choices[0].message.content;
         console.log(`[/create] Response: ${text.slice(0, 100)}...`);
-        
+
         const channel = await client.channels.fetch(wolfyChat);
         for (let i = 0; i < text.length; i += chunkSize) {
             if (i === 0) {
@@ -560,7 +564,7 @@ async function handleCreateCommand(interaction) {
                 await channel.send(text.slice(i, i + chunkSize));
             }
         }
-        
+
     } catch (error) {
         console.error('[/create] Error:', error.message);
         try {
@@ -600,7 +604,7 @@ async function handleCreateCommand(interaction) {
 async function handleMemeCommand(interaction) {
     const userText = interaction.options.getString('topic') || '';
     console.log(`[/meme] Topic: ${userText || 'random'}`);
-    
+
     // Check cooldown
     const now = Date.now();
     const userId = interaction.user.id;
@@ -612,12 +616,12 @@ async function handleMemeCommand(interaction) {
         }
     }
     cooldowns.set(userId, now);
-    
+
     try {
         await interaction.deferReply();
-        
+
         const systemPrompt = buildPrompt(`!meme ${userText}`, 'meme');
-        
+
         const response = await aiClient.path("/chat/completions").post({
             body: {
                 messages: [
@@ -629,10 +633,10 @@ async function handleMemeCommand(interaction) {
                 model: model
             }
         });
-        
+
         const text = response.body.choices[0].message.content;
         console.log(`[/meme] Response: ${text.slice(0, 100)}...`);
-        
+
         const channel = await client.channels.fetch(wolfyChat);
         for (let i = 0; i < text.length; i += chunkSize) {
             if (i === 0) {
@@ -641,7 +645,7 @@ async function handleMemeCommand(interaction) {
                 await channel.send(text.slice(i, i + chunkSize));
             }
         }
-        
+
     } catch (error) {
         console.error('[/meme] Error:', error.message);
         try {
@@ -681,7 +685,7 @@ async function handleMemeCommand(interaction) {
 async function handleDomainCommand(interaction) {
     const userText = interaction.options.getString('character') || '';
     console.log(`[/domain] Character: ${userText || 'random'}`);
-    
+
     // Check cooldown
     const now = Date.now();
     const userId = interaction.user.id;
@@ -693,12 +697,12 @@ async function handleDomainCommand(interaction) {
         }
     }
     cooldowns.set(userId, now);
-    
+
     try {
         await interaction.deferReply();
-        
+
         const systemPrompt = buildPrompt(`!domain ${userText}`, 'domain');
-        
+
         const response = await aiClient.path("/chat/completions").post({
             body: {
                 messages: [
@@ -710,10 +714,10 @@ async function handleDomainCommand(interaction) {
                 model: model
             }
         });
-        
+
         const text = response.body.choices[0].message.content;
         console.log(`[/domain] Response: ${text.slice(0, 100)}...`);
-        
+
         const channel = await client.channels.fetch(wolfyChat);
         for (let i = 0; i < text.length; i += chunkSize) {
             if (i === 0) {
@@ -722,7 +726,7 @@ async function handleDomainCommand(interaction) {
                 await channel.send(text.slice(i, i + chunkSize));
             }
         }
-        
+
     } catch (error) {
         console.error('[/domain] Error:', error.message);
         try {
@@ -762,23 +766,70 @@ async function handleDomainCommand(interaction) {
 async function handleAddQuoteCommand(interaction) {
     const quoteText = interaction.options.getString('text');
     console.log(`[/addquote] Quote: ${quoteText}`);
-    
+
     try {
         const author = interaction.user.globalName || interaction.user.username;
         console.log('[/addquote] Author:', author);
-        
+
         await Quotes.create({
             content: quoteText,
             author: author
         });
-        
+
         // Refresh quotes cache
         randomQuotes = await Quotes.find({});
-        
+
         await interaction.reply({ content: `✅ Quote added: ***${quoteText} - ${author}***` });
-        
+
     } catch (error) {
         console.error('[/addquote] Error:', error.message);
         await interaction.reply({ content: 'Failed to add quote. Try again later.' });
+    }
+}
+
+
+//HELP COMMAND HANDLER
+
+async function handleHelpCommand(interaction) {
+
+    // Check cooldown
+    const now = Date.now();
+    const userId = interaction.user.id;
+    if (cooldowns.has(userId)) {
+        const expirationTime = cooldowns.get(userId) + cooldownTime;
+        if (now < expirationTime) {
+            const remaining = Math.ceil((expirationTime - now) / 1000);
+            return interaction.reply({ content: `Wait ${remaining}s before using /help again.`, ephemeral: true });
+        }
+    }
+    cooldowns.set(userId, now);
+
+    try {
+        await interaction.deferReply();
+        const embed = new EmbedBuilder()
+            .setTitle(`📃 Help commands: `)
+            .setColor(0x5865F2)
+            .setDescription(`
+
+                **/wolfy**: Talk with the AI-Powered Wolfy bot, representing the pure spirit of lupos.
+
+                **/research**: Perform a real-time research on the WEB using Wolfy, it will return you an AI summary of the research and the sources.
+
+                **/create**: Create a text for your documents, or listings, or anything you need to create (copywriting prime).
+
+                **/summarize**: Summarize the previous conversation, limited to the last 100 messages.
+
+                **/meme**: Create some funny meme shit with the LUPOS atmosphere.
+
+                **/domain**: Create some funny stories all based from the LUPOS humor.
+
+                **/addquote**: Add your own quote to your quote database and wait for it to show up in <#${quotesChat}>.
+
+                `)
+        await interaction.editReply({ embeds: [embed] });
+
+    } catch (fallbackError) {
+        console.error('[/research] Fallback error:', fallbackError.message);
+        await interaction.editReply({ content: 'Help failed. Try again later.' });
     }
 }
