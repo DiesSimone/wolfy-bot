@@ -96,13 +96,22 @@ client.on("ready", async () => {
 
 client.on('messageCreate', async message => {
     const content = message.content.toLowerCase();
+
     if (message.author.bot) {
         return
     };
 
+    const randomNum = getRandomInt(0, 50)
+
+    if (randomNum == 25) {
+        message.reply("I heavy forbid you to keep typing forward. Drink some water now.")
+    }
+
     if (content.includes("morning") || content.includes("gm")) {
         message.reply(`GOOD MORNING`);
     }
+
+    console.log("WATERNUM: " + randomNum)
 });
 
 function getRandomInt(min, max) {
@@ -823,7 +832,7 @@ async function handleHelpCommand(interaction) {
 
                 **/domain**: Create some funny stories all based from the LUPOS humor.
 
-                **/addquote**: Add your own quote to your quote database and wait for it to show up in <#${quotesChat}>.
+                **/addquote**: Add your own quote to our quote database and wait for it to show up in <#${quotesChat}>.
 
                 `)
         await interaction.editReply({ embeds: [embed] });
