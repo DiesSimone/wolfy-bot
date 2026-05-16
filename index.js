@@ -344,7 +344,7 @@ async function handleWolfyCommand(interaction) {
         const expirationTime = cooldowns.get(userId) + cooldownTime;
         if (now < expirationTime) {
             const remaining = Math.ceil((expirationTime - now) / 1000);
-            return interaction.reply({ content: `Wait ${remaining}s before using /wolfy again.`, ephemeral: true });
+            return interaction.reply({ content: `Wait ${remaining}s before using an AI based command again.`, ephemeral: true });
         }
     }
     cooldowns.set(userId, now);
@@ -428,7 +428,7 @@ async function handleResearchCommand(interaction) {
         const expirationTime = cooldowns.get(userId) + cooldownTime;
         if (now < expirationTime) {
             const remaining = Math.ceil((expirationTime - now) / 1000);
-            return interaction.reply({ content: `Wait ${remaining}s before using /research again.`, ephemeral: true });
+            return interaction.reply({ content: `Wait ${remaining}s before using an AI based command again.`, ephemeral: true });
         }
     }
     cooldowns.set(userId, now);
@@ -530,8 +530,13 @@ async function handleResearchCommand(interaction) {
  * =============================================================================
  */
 async function handleCreateCommand(interaction) {
-    const userText = interaction.options.getString('prompt');
-    console.log(`[/create] Prompt: ${userText}`);
+    const prompt = interaction.options.getString('prompt');
+    const template = interaction.options.getString('template');
+    const length = interaction.options.getInteger('length');
+
+    console.log(`[/create] Prompt: ${prompt}`);
+    if (template) console.log(`[/create] Template: ${template}`);
+    if (length) console.log(`[/create] Length: ${length}`);
 
     // Check cooldown
     const now = Date.now();
@@ -540,7 +545,7 @@ async function handleCreateCommand(interaction) {
         const expirationTime = cooldowns.get(userId) + cooldownTime;
         if (now < expirationTime) {
             const remaining = Math.ceil((expirationTime - now) / 1000);
-            return interaction.reply({ content: `Wait ${remaining}s before using /create again.`, ephemeral: true });
+            return interaction.reply({ content: `Wait ${remaining}s before using an AI based command again.`, ephemeral: true });
         }
     }
     cooldowns.set(userId, now);
@@ -548,13 +553,21 @@ async function handleCreateCommand(interaction) {
     try {
         await interaction.deferReply();
 
-        const systemPrompt = buildPrompt(`!create ${userText}`, 'create');
+        let userMessage = `!create ${prompt}`;
+        if (template) {
+            userMessage += `\n\nTemplate: ${template}`;
+        }
+        if (length) {
+            userMessage += `\n\nOutput length: approximately ${length} characters.`;
+        }
+
+        const systemPrompt = buildPrompt(userMessage, 'create');
 
         const response = await aiClient.path("/chat/completions").post({
             body: {
                 messages: [
                     { role: "system", content: systemPrompt },
-                    { role: "user", content: `!create ${userText}` }
+                    { role: "user", content: userMessage }
                 ],
                 temperature: 1.0,
                 top_p: 1.0,
@@ -562,8 +575,12 @@ async function handleCreateCommand(interaction) {
             }
         });
 
-        const text = response.body.choices[0].message.content;
+        let text = response.body.choices[0].message.content;
         console.log(`[/create] Response: ${text.slice(0, 100)}...`);
+
+        // if (template) {
+        //     text = `${template}\n\n${text}`;
+        // }
 
         const channel = await client.channels.fetch(wolfyChat);
         for (let i = 0; i < text.length; i += chunkSize) {
@@ -577,19 +594,30 @@ async function handleCreateCommand(interaction) {
     } catch (error) {
         console.error('[/create] Error:', error.message);
         try {
-            const systemPrompt = buildPrompt(`!create ${userText}`, 'create');
+            let userMessage = `!create ${prompt}`;
+            if (template) {
+                userMessage += `\n\nTemplate: ${template}`;
+            }
+            if (length) {
+                userMessage += `\n\nOutput length: approximately ${length} characters.`;
+            }
+
+            const systemPrompt = buildPrompt(userMessage, 'create');
             const response = await aiClient2.path("/chat/completions").post({
                 body: {
                     messages: [
                         { role: "system", content: systemPrompt },
-                        { role: "user", content: `!create ${userText}` }
+                        { role: "user", content: userMessage }
                     ],
                     temperature: 1.0,
                     top_p: 1.0,
                     model: model
                 }
             });
-            const text = response.body.choices[0].message.content;
+            let text = response.body.choices[0].message.content;
+            if (template) {
+                text = `${template}\n\n${text}`;
+            }
             const channel = await client.channels.fetch(wolfyChat);
             for (let i = 0; i < text.length; i += chunkSize) {
                 if (i === 0) {
@@ -621,7 +649,7 @@ async function handleMemeCommand(interaction) {
         const expirationTime = cooldowns.get(userId) + cooldownTime;
         if (now < expirationTime) {
             const remaining = Math.ceil((expirationTime - now) / 1000);
-            return interaction.reply({ content: `Wait ${remaining}s before using /meme again.`, ephemeral: true });
+            return interaction.reply({ content: `Wait ${remaining}s before using an AI based command again.`, ephemeral: true });
         }
     }
     cooldowns.set(userId, now);
@@ -702,7 +730,7 @@ async function handleDomainCommand(interaction) {
         const expirationTime = cooldowns.get(userId) + cooldownTime;
         if (now < expirationTime) {
             const remaining = Math.ceil((expirationTime - now) / 1000);
-            return interaction.reply({ content: `Wait ${remaining}s before using /domain again.`, ephemeral: true });
+            return interaction.reply({ content: `Wait ${remaining}s before using an AI based command again.`, ephemeral: true });
         }
     }
     cooldowns.set(userId, now);
@@ -801,18 +829,6 @@ async function handleAddQuoteCommand(interaction) {
 
 async function handleHelpCommand(interaction) {
 
-    // Check cooldown
-    const now = Date.now();
-    const userId = interaction.user.id;
-    if (cooldowns.has(userId)) {
-        const expirationTime = cooldowns.get(userId) + cooldownTime;
-        if (now < expirationTime) {
-            const remaining = Math.ceil((expirationTime - now) / 1000);
-            return interaction.reply({ content: `Wait ${remaining}s before using /help again.`, ephemeral: true });
-        }
-    }
-    cooldowns.set(userId, now);
-
     try {
         await interaction.deferReply();
         const embed = new EmbedBuilder()
@@ -824,7 +840,7 @@ async function handleHelpCommand(interaction) {
 
                 **/research**: Perform a real-time research on the WEB using Wolfy, it will return you an AI summary of the research and the sources.
 
-                **/create**: Create a text for your documents, or listings, or anything you need to create (copywriting prime).
+                **/create**: Create a text for your documents, listings, or anything you need to create. Options: template (format) and length (1-10000 chars).
 
                 **/summarize**: Summarize the previous conversation, limited to the last 100 messages.
 

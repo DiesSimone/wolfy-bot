@@ -56,6 +56,18 @@ const createCommand = new SlashCommandBuilder()
         option.setName('prompt')
             .setDescription('What you want to create')
             .setRequired(true)
+    )
+    .addStringOption(option =>
+        option.setName('template')
+            .setDescription('Template format to prepend to output (optional)')
+            .setRequired(false)
+    )
+    .addIntegerOption(option =>
+        option.setName('length')
+            .setDescription('Desired output length in characters (optional)')
+            .setMinValue(1)
+            .setMaxValue(10000)
+            .setRequired(false)
     );
 
 // =============================================================================
