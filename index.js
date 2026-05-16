@@ -7,7 +7,7 @@ const { registerSlashCommands } = require('./modules/slash-commands.js');
 const { buildPrompt } = require('./modules/prompts.js');
 const { startMorningScheduler } = require('./modules/morning.js');
 const { performWebResearch, isConfigured: isWebResearchConfigured } = require('./modules/webresearch.js');
-const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ActivityType } = require('discord.js');
 const ModelClient = require("@azure-rest/ai-inference").default;
 const { AzureKeyCredential } = require("@azure/core-auth");
 const dns = require('dns');
@@ -28,6 +28,7 @@ let summarizer = null;
 const summarizeCooldowns = new Map();
 const summarizeCooldownTime = 30 * 1000;
 const summarizeRateLimit = new Map();
+const dedicatedChatBlockEnabled = process.env.DEDICATED_CHAT_BLOCK_ENABLED !== 'false';
 const summarizeRateLimitCount = 5;
 const summarizeRateLimitWindow = 60 * 1000;
 
@@ -62,6 +63,14 @@ client.on("ready", async () => {
         const quoteChannel = await client.channels.fetch(quotesChat);
         channel.send("Wolfy is online, i either got rebooted by Simo or i crashed and reborn: All your current requests got deleted, i'm sorry, blame Simo not me");
         console.log("Wolfy ready");
+
+        client.user.setPresence({
+            activities: [{
+                name: 'Embodying the soul of LUPOS',
+                type: ActivityType.Streaming
+            }],
+            status: 'online', 
+        });
 
         const guildId = process.env.GUILD_ID;
         if (guildId) await registerSlashCommands(client, guildId);
@@ -101,10 +110,28 @@ client.on('messageCreate', async message => {
         return
     };
 
+    if (message.channel.id === wolfyChat) {
+        try {
+            await message.delete();
+            console.log(`[DEDICATED-CHAT] Deleted message from ${message.author.tag}: "${message.content}"`);
+        } catch (error) {
+            console.error(`[DEDICATED-CHAT] Failed to delete message:`, error.message);
+        }
+
+        try {
+            const warningMsg = await message.channel.send("⚠️ Only bot commands are allowed in this channel. Use slash commands.");
+            setTimeout(() => warningMsg.delete().catch(() => {}), 3000);
+        } catch (error) {
+            console.error(`[DEDICATED-CHAT] Failed to send warning:`, error.message);
+        }
+
+        return;
+    }
+
     const randomNum = getRandomInt(0, 50)
 
     if (randomNum == 25) {
-        message.reply("I heavy forbid you to keep typing forward. Drink some water now.")
+        message.reply("I heavy forbid every person watching to keep typing forward. Drink some water now.")
     }
 
     if (content.includes("morning") || content.includes("gm")) {
