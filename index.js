@@ -22,6 +22,7 @@ const cooldowns = new Map();
 const cooldownTime = 10 * 6000;
 const quoteInterval = 60 * 60000;
 const chunkSize = 2000;
+const waterQuotes = ["I heavy forbid every person watching to keep typing forward. Drink some water now.", "I officially forbid you from reading any further until you take a deep breath and take a sip of water.", "Stop. This is a wellness checkpoint. Move the nearest glass of water to your lips before you keep typing.", "Get off your screen right now. Your brain is frying and you look dehydrated. Drink water. Move.", "I heavily command you to stop typing this instant. You look miserable. Go drink some water.", "I'll give you one second. Drink water."];
 let randomQuotes = [];
 let summarizer = null;
 
@@ -130,8 +131,9 @@ client.on('messageCreate', async message => {
 
     const randomNum = getRandomInt(0, 50)
 
-    if (randomNum == 25) {
-        message.reply("I heavy forbid every person watching to keep typing forward. Drink some water now.")
+    if (randomNum === 25) {
+        const chosenQuote = waterQuotes[getRandomInt(0, waterQuotes.length - 1)]
+        message.reply(chosenQuote)
     }
 
     if (content.includes("morning") || content.includes("gm")) {
@@ -145,7 +147,7 @@ function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     const randomNum = Math.floor(Math.random() * (max - min + 1)) + min
-    console.log(`[RANDOM-NUM] ${randomNum}`);
+    // console.log(`[RANDOM-NUM] ${randomNum}`);
     return randomNum;
 }
 
