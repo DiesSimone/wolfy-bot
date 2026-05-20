@@ -23,6 +23,7 @@ const cooldownTime = 10 * 6000;
 const quoteInterval = 60 * 60000;
 const chunkSize = 2000;
 const waterQuotes = ["I heavy forbid every person watching to keep typing forward. Drink some water now.", "I officially forbid you from reading any further until you take a deep breath and take a sip of water.", "Stop. This is a wellness checkpoint. Move the nearest glass of water to your lips before you keep typing.", "Get off your screen right now. Your brain is frying and you look dehydrated. Drink water. Move.", "I heavily command you to stop typing this instant. You look miserable. Go drink some water.", "I'll give you one second. Drink water."];
+const waterReminderUsers = new Map();
 let randomQuotes = [];
 let summarizer = null;
 
@@ -51,6 +52,7 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessageReactions,
     ]
 });
 
@@ -129,11 +131,37 @@ client.on('messageCreate', async message => {
         return;
     }
 
+    if (waterReminderUsers.has(message.author.id)) {
+        const sentAt = waterReminderUsers.get(message.author.id);
+        const elapsed = Date.now() - sentAt;
+        const remaining = Math.ceil((10000 - elapsed) / 1000);
+
+        if (remaining <= 0) {
+            waterReminderUsers.delete(message.author.id);
+        } else {
+            try {
+                await message.delete();
+            } catch (error) {
+                console.error(`[WATER-REMINDER] Failed to delete message:`, error.message);
+            }
+
+            try {
+                const warning = await message.channel.send(`${message.author}, drink water first! Wait ${remaining}s. 💧`);
+                setTimeout(() => warning.delete().catch(() => {}), 5000);
+            } catch (error) {
+                console.error(`[WATER-REMINDER] Failed to send warning:`, error.message);
+            }
+
+            return;
+        }
+    }
+
     const randomNum = getRandomInt(0, 50)
 
     if (randomNum === 25) {
         const chosenQuote = waterQuotes[getRandomInt(0, waterQuotes.length - 1)]
-        message.reply(chosenQuote)
+        const reply = await message.reply(chosenQuote)
+        waterReminderUsers.set(message.author.id, Date.now())
     }
 
     if (content.includes("morning") || content.includes("gm")) {
