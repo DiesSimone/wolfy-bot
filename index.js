@@ -22,8 +22,9 @@ const cooldowns = new Map();
 const cooldownTime = 10 * 6000;
 const quoteInterval = 60 * 60000;
 const chunkSize = 2000;
-const waterQuotes = ["I heavy forbid every person watching to keep typing forward. Drink some water now.", "I officially forbid you from reading any further until you take a deep breath and take a sip of water.", "Stop. This is a wellness checkpoint. Move the nearest glass of water to your lips before you keep typing.", "Get off your screen right now. Your brain is frying and you look dehydrated. Drink water. Move.", "I heavily command you to stop typing this instant. You look miserable. Go drink some water.", "I'll give you one second. Drink water."];
-const waterReminderUsers = new Map();
+const waterQuotes = ["I heavy forbid every person watching to keep typing forward. Drink some water now.", "I officially forbid everyone from reading any further until you take a deep breath and take a sip of water.", "Stop everyone. This is a wellness checkpoint. Move the nearest glass of water to your lips before you keep typing.", "Get off your screen right now you ALL. Y'all brain is frying and you look dehydrated. Drink water. Move.", "I heavily command everyone in this server to stop typing this instant. You look miserable. Go drink some water.", "I'll give y'all one second. Drink. Water. Now."];
+const channelMessageCounts = new Map();
+const channelWaterLocks = new Map();
 let randomQuotes = [];
 let summarizer = null;
 
@@ -131,14 +132,27 @@ client.on('messageCreate', async message => {
         return;
     }
 
-    if (waterReminderUsers.has(message.author.id)) {
-        const sentAt = waterReminderUsers.get(message.author.id);
-        const elapsed = Date.now() - sentAt;
+    // ========================================================================
+    // WATER REMINDER SYSTEM
+    // ========================================================================
+    // Tracks message rate per channel (25 msgs in 60s = trigger).
+    // When triggered, the channel locks for 10s — everyone is blocked.
+    // Messages sent during lock are deleted + user sees a countdown warning.
+    // ========================================================================
+
+    const now = Date.now();
+
+    // STEP 1: If channel is already locked, block this message
+    if (channelWaterLocks.has(message.channel.id)) {
+        const lockStart = channelWaterLocks.get(message.channel.id);
+        const elapsed = now - lockStart;
         const remaining = Math.ceil((10000 - elapsed) / 1000);
 
         if (remaining <= 0) {
-            waterReminderUsers.delete(message.author.id);
+            // Lock expired — remove it and let the message through
+            channelWaterLocks.delete(message.channel.id);
         } else {
+            // Lock still active — delete message and warn user
             try {
                 await message.delete();
             } catch (error) {
@@ -152,23 +166,36 @@ client.on('messageCreate', async message => {
                 console.error(`[WATER-REMINDER] Failed to send warning:`, error.message);
             }
 
-            return;
+            return; // Don't process this message further
         }
     }
 
-    const randomNum = getRandomInt(0, 50)
+    // STEP 2: Track this message's timestamp for rate counting
+    if (!channelMessageCounts.has(message.channel.id)) {
+        channelMessageCounts.set(message.channel.id, []);
+    }
+    const timestamps = channelMessageCounts.get(message.channel.id);
+    timestamps.push(now);
 
-    if (randomNum === 25) {
-        const chosenQuote = waterQuotes[getRandomInt(0, waterQuotes.length - 1)]
-        const reply = await message.reply(chosenQuote)
-        waterReminderUsers.set(message.author.id, Date.now())
+    // STEP 3: Remove timestamps older than 60 seconds
+    const cutoff = now - 60000;
+    channelMessageCounts.set(message.channel.id, timestamps.filter(t => t > cutoff));
+
+    // STEP 4: Check if threshold is hit (25 msgs in the last minute)
+    const count = channelMessageCounts.get(message.channel.id).length;
+    console.log(`[WATER-REMINDER] Channel ${message.channel.id} message count: ${count}`);
+    if (count >= 25 && !channelWaterLocks.has(message.channel.id)) {
+        // Trigger water reminder — send quote, lock channel, reset counter
+        const chosenQuote = waterQuotes[getRandomInt(0, waterQuotes.length - 1)];
+        await message.channel.send(chosenQuote);
+        channelWaterLocks.set(message.channel.id, now);
+        channelMessageCounts.set(message.channel.id, []); // Fresh start
+        console.log(`[WATER-REMINDER] Rate limit hit in ${message.channel.id}, locking channel`);
     }
 
     if (content.includes("morning") || content.includes("gm")) {
         message.reply(`GOOD MORNING`);
     }
-
-    console.log("WATERNUM: " + randomNum)
 });
 
 function getRandomInt(min, max) {
